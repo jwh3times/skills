@@ -1,0 +1,14 @@
+{
+  "name": "skills",
+  "private": true,
+  "type": "module",
+  "description": "Agent skills shared across jwh3times repositories.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node scripts/build-settings.mjs",
+    "check": "node scripts/build-settings.mjs --check && node scripts/lint-agent-neutrality.mjs && node --test scripts/"
+  }
+}

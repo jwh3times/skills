@@ -7,7 +7,7 @@ architecture; read it before changing how a skill is structured, configured, or 
 
 ## Skill bodies
 
-- A skill body is identical in every repository it lands in, so `npx skills update` delivers fixes
+- A skill body is identical in every repository it lands in, so re-running the install delivers fixes
   everywhere. Repo-specific behavior is read at run time from that repository's
   `docs/agents/<topic>.md` settings files; machine-specific behavior from the machine config. When
   a skill needs a fact about its repository, add a setting and teach the skill's first-run step to
@@ -18,6 +18,17 @@ architecture; read it before changing how a skill is structured, configured, or 
 - Shell snippets in a `SKILL.md` use named variables (`"$branch"`, `${1:-default}`). Claude Code
   replaces a bare `$0`–`$9` in a loaded `SKILL.md` with the invocation's argument words
   (apexracers#451).
+
+## Layout
+
+- `skills/<name>/` is what installs. Its `settings/` folder is generated from the catalog in
+  `settings/` (topics named under `metadata: settings:` in the skill's frontmatter): edit
+  `settings/`, then `npm run build`.
+- `scripts/sync-agents.mjs` and `scripts/lint-agent-neutrality.mjs` are the canonical copies of the
+  scripts every consumer repository carries. Fix them here first; consumers take the new copy.
+- A skill derived from someone else's keeps their license notice inside its own folder (as
+  `skills/handoff/LICENSE`), since the folder installs without the rest of this repository.
+- `npm run check` (CI runs it) must pass before a commit.
 
 ## Consumer repositories
 

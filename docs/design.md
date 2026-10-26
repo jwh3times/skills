@@ -1,13 +1,13 @@
 # Shared skills: design
 
-Status: proposal, 2026-10-26. Nothing here is built yet.
+Status: decided 2026-10-26 (see Decisions); pilot step 1 done; step 2 in progress (`end-session` written, not yet installed anywhere).
 
 ## Goal
 
 Publish the skills the user wrote — `ship`, `end-session`, `handoff`, `lets-go`, and possibly
 `docs-updater` — from this one repository, installable into any repository. Installing adapts a skill
 to its repository, but **by writing settings, not by editing the skill**: the skill body stays
-identical everywhere so fixes flow to every repository through `npx skills update`.
+identical everywhere so fixes flow to every repository by re-running the install (see Install and update).
 
 ## Why not edit the skill per repo
 
@@ -42,6 +42,20 @@ runs nothing at install. So every skill opens with a step 0:
 > merge style, `private/`), propose values, confirm them with the user, write the file, then continue.
 
 The same step handles upgrades: a new skill version that adds a setting asks for only that one.
+When no user can confirm (running as a subagent, or in a non-interactive run), step 0 writes
+nothing: it stops and reports the missing settings to its caller. A skill invoked inline by another
+(handoff running end-session) still has the user, so it asks.
+
+**Settings format.** A repo settings file is Markdown with one `##` heading per setting, under the
+setting's fixed name; step 0 detects a missing setting by its missing heading. Hooks are
+`## Hook: <name>` sections listing steps. Helper scripts never read repo settings: the agent reads
+them and passes values as arguments (`handoff-map.mjs --key ApexRacers`). The machine config is a
+shell-style `KEY=value` file.
+
+**Settings definitions.** This repository keeps one catalog, `settings/<topic>.md`: each setting's
+name, kind, meaning, and how step 0 discovers it. A build script copies the topics a skill reads
+into `skills/<name>/settings/`, so every installed skill carries the definitions it needs; its
+`--check` fails when a copy drifts from the catalog.
 
 **Hooks cover genuinely repo-only steps.** A skill names fixed points ("before fast checks", "after
 sync", "extra cleanup"); a repo settings file may list steps under a hook, which the skill runs at
@@ -51,15 +65,22 @@ own name (e.g. `pressgolf-release`) rather than bending the shared one.
 **Install and update.**
 
 ```bash
-npx skills add jwh3times/skills --copy      # install into .agents/skills/
+# Install, and later update: the same command
+npx skills add jwh3times/skills -s end-session -s ship -a codex --copy -y
 node scripts/sync-agents.mjs                # regenerate .claude/skills/
-npx skills update -p -y                     # later: pull new skill versions
-node scripts/sync-agents.mjs                # twice, until the symlink bug is fixed (see Verified)
-node scripts/sync-agents.mjs --check
 ```
 
-`handoff`/`lets-go` are candidates for a machine-wide install (`-g`), since most of what varies about
-them depends on the machine, not the repository.
+Claude Code reads project skills only from `.claude/skills/` (2.1.310, tested 2026-10-26), so that
+mirror stays. `-a codex` makes the CLI write only `.agents/skills/`, leaving `sync-agents.mjs` the
+sole writer of `.claude/skills/`. `npx skills update` is not used: it re-runs `add` for every agent
+it detects, which links `.claude/skills/<name>` (see Verified). Re-running `add` is all `update`
+does, without the up-to-date check; an unchanged skill rewrites to an identical file.
+
+Every skill installs per project, `handoff`/`lets-go` included: helper scripts keep a fixed
+repo-root-relative path (`.agents/skills/handoff/handoff-map.mjs`), cloud sessions get a committed
+copy, and each repository keeps one lock file. The CLI installs only skills, so `sync-agents.mjs`
+and `lint-agent-neutrality.mjs` are copied by hand; this repository holds their canonical copies
+and tests, and fixes land here first.
 
 ## Settings catalog
 
@@ -207,18 +228,28 @@ the best version, which keeps the catalog above short.
 - Ship apexracers#451's rule: reject bare `$0`–`$9` in any `SKILL.md`. VA's `handoff` passes
   arguments into `end-session`, so substitution is live in callers too.
 
-## Open decisions
+## Decisions
 
-1. **Private links in a public PR body.** VA adds them; CH, GT and LB forbid them. Proposal: forbid.
-2. **When ship files human follow-ups.** Before the PR in most copies; after it in MA and VA.
-   Proposal: before, fixed in the body.
-3. **Release schemes.** Keep all four, or converge? Rollup-per-merge and dated-plus-backfill differ
-   mostly in how Dependabot tags are treated.
-4. **`docs-updater`.** Make it a sixth shared piece? ship and end-session depend on it in 8 repos,
-   and today its body is repo-specific.
-5. **Machine-wide install** for `handoff`/`lets-go`.
-6. **Prune overlapping third-party skills** (`grill-me`/`grill-with-docs`/`grilling`; possibly
-   `teach`, `wayfinder`, `to-questionnaire`, `wait-what`). No usage data gathered.
+Settled with the user on 2026-10-26. Settings format, settings definitions, step 0 without a user,
+per-project install and the shared scripts are recorded under Architecture.
+
+1. **Visibility: public.** Consumer repos are public and commit their skill copies, so the bodies
+   are public already. Private companion names and board numbers stay out of this repository.
+2. **Private links in a public PR body: forbidden.**
+3. **Human follow-ups: filed before the PR**, fixed in the `ship` body.
+4. **`handoff` replaces `mattpocock/skills`' `handoff`** under the same name; it began as a rewrite
+   of that skill. Installing from here repoints the lock entry. Add `mattpocock/skills` skills by
+   name (`-s`), never `--all`, so theirs cannot come back.
+5. **`docs-updater` becomes a shared skill** reading `docs/agents/docs.md`. `ship` and
+   `end-session` run it in a subagent where one exists; each repository deletes its
+   `.claude/agents/docs-updater.md` when the skill is installed. Ported after `ship`.
+6. **License: MIT**, at the root. `skills/handoff/LICENSE` keeps Matt Pocock's MIT notice (and
+   `lets-go`'s too, if it also derives from his work), because a skill folder installs alone.
+7. **Layout:** skills in `skills/<name>/`; catalog in `settings/` with
+   `scripts/build-settings.mjs` copying it into each skill; canonical shared scripts with
+   `node:test` suites in `scripts/`; `npm run check` locally and in CI.
+8. **Deferred:** converging release schemes (a `releases.md` setting until `ship` is ported) and
+   pruning overlapping third-party skills (a consumer-repo question, not this repository's).
 
 ## Unverified
 
@@ -240,11 +271,18 @@ installed into a scratch project on Fedora (`gh` authenticated).
 - **The CLI writes `.claude/skills/` too.** `add --copy -y` copies the skill to every agent it
   detects, including `.claude/skills/<name>`. `update` re-runs `add` without `--copy`, which
   replaces that copy with a symlink to `.agents/skills/<name>`.
-- **`sync-agents.mjs` needs two runs to repair that symlink.** The write pass checks
-  `.claude/skills/<name>/SKILL.md` through the link, finds it current, and skips it; the orphan pass
-  then deletes the link. After one run the skill is missing from `.claude/skills/` (`--check`
-  fails); a second run restores it. Until the script is fixed (remove strays before writing), the
-  update sequence is `skills update -p -y`, then sync twice, then `sync --check`.
+- **`sync-agents.mjs` corrupts the authored skill when that symlink is present.** The write pass
+  writes the bannered mirror *through* the link, so the "GENERATED — do not edit" banner lands in
+  `.agents/skills/<name>/SKILL.md`; the orphan pass then deletes the link, leaving the skill missing
+  from `.claude/skills/` until a second run. Fixed here (links are removed before the write pass,
+  with a regression test) in `scripts/sync-agents.mjs`; each repository takes the fixed copy at its
+  pilot install. Until then, a repository that runs `skills update` must check
+  `git diff .agents/skills` for the banner.
+- **Claude Code does not read `.agents/skills/`.** Its skills docs and settings reference list only
+  `.claude/skills/` for project skills, and Claude Code 2.1.310 listed a control skill there but not
+  one placed only in `.agents/skills/`.
+- **`add -a codex --copy -y` writes only `.agents/skills/<name>`**, with no `.claude/skills/` entry,
+  even where a `.claude/` directory exists; re-running it replaces the skill.
 - `update` cannot use a local `file://` source: the child `add` receives a folder-suffixed URL that
   is not a repository.
 
@@ -257,8 +295,8 @@ installed into a scratch project on Fedora (`gh` authenticated).
   document and pushes the whole map after `set`; lets-go has the same pull → clear → push window. A
   concurrent session lost an apexracers clear on 2026-10-26.
 - MA's map script hardcodes the Proton account and `My Files` casing.
-- `sync-agents.mjs` (shared verbatim by all 10) leaves a skill missing from `.claude/skills/` after
-  one run when that directory is a symlink; see Verified.
+- `sync-agents.mjs` (shared verbatim by all 10) writes its banner into the authored skill when
+  `skills update` has left `.claude/skills/<name>` as a symlink; see Verified.
 - GT `end-session` says nothing in `private/` can reach a commit; `private/` is its own repository.
 - GT `end-session` fences POSIX commands as `powershell`; AR `end-session` says Git Bash on Linux.
 
