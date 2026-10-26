@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "skills": {
+    "end-session": {
+      "source": ".",
+      "sourceType": "local",
+      "computedHash": "a3328d070a738f51eaaccc74b42bc08b18265ab93e7e6a53fa0ca68a35ffee89"
+    },
+    "handoff": {
+      "source": ".",
+      "sourceType": "local",
+      "computedHash": "31a80c3348304d6e4a97428854f487826cd03511bf4c0af64867051181402b38"
+    },
+    "lets-go": {
+      "source": ".",
+      "sourceType": "local",
+      "computedHash": "278b594857b64fc0dd6f49423568a38aa96c5e392ff2abfe47a4e7cc4ee5cc05"
+    }
+  }
+}

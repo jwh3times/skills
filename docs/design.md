@@ -1,6 +1,6 @@
 # Shared skills: design
 
-Status: decided 2026-10-26 (see Decisions); pilot step 1 done; step 2 in progress (`end-session` written, not yet installed anywhere).
+Status: decided 2026-10-26 (see Decisions); pilot step 1 done; `end-session`, `handoff` and `lets-go` written and installed only in this repository; the consumer pilot (step 2) waits for the user's go-ahead.
 
 ## Goal
 
@@ -81,6 +81,13 @@ repo-root-relative path (`.agents/skills/handoff/handoff-map.mjs`), cloud sessio
 copy, and each repository keeps one lock file. The CLI installs only skills, so `sync-agents.mjs`
 and `lint-agent-neutrality.mjs` are copied by hand; this repository holds their canonical copies
 and tests, and fixes land here first.
+
+**This repository installs its own skills**, so `handoff` and `lets-go` work here like anywhere
+else: `npx skills add ./ -s <name> -a codex --copy -y` copies `skills/<name>` verbatim into
+`.agents/skills/<name>` and locks it with source `.`. After that, `npm run build` refreshes those
+copies (`scripts/self-install.mjs`) and the `.claude/skills/` mirror, and `npm run check` fails when
+either drifts. The lock's `computedHash` goes stale on a refresh; nothing reads it, since `update`
+is never run.
 
 ## Settings catalog
 
@@ -192,6 +199,24 @@ The map helper (`handoff-map.mjs`) ships inside the skill directory. Today it li
 six repos and at `scripts/` in four, with four command sets (`get/set/clear`, `where/get/publish/clear`,
 `get/publish/clear --expect`, `resolve/set null`). Only AR, CH, CA and HV have tests.
 
+**As built** (2026-10-26; `skills/handoff/machine-config.md` is the reference):
+
+- The machine config is `~/.config/handoffs/config` with `HANDOFFS_TRANSPORT` (`folder` when a sync
+  client or nothing moves the folder, `proton-cli` for the CLI mirror), `HANDOFFS_DIR` and, for
+  `proton-cli`, `HANDOFFS_REMOTE`. An environment variable of the same name overrides a line.
+  `handoff-map.mjs config` proposes it from what it finds (a synced Proton folder, VA's discovery;
+  else the CLI and an exported `HANDOFFS_DIR`), and `config --write` writes it once the user
+  confirms.
+- `handoff-map.mjs` reads the machine config (never repository settings; the key comes in as
+  `--key`) and does the CLI transfers itself, judging each by the CLI's JSON summary. Commands:
+  `get`, `name` (an unused `<key>-handoff-<date>[-topic].md`, checked against the cloud folder too),
+  `set` (pushes the document, then pull → write → push → read back the cloud map, retrying up to
+  three times), `clear --expect` (the same round with compare-and-swap) and `push` (a re-sent
+  document, without the map). The map is written through a temporary file and a rename.
+- Its tests live in `scripts/handoff-map.test.mjs`, with a fake `proton-drive` whose cloud folder is
+  a directory, so the test file does not install into consumers.
+- `lets-go` uses the copy in `.agents/skills/handoff/`, so it needs `handoff` installed beside it.
+
 ## Fixed in the skill body, not settings
 
 These variations are accidental drift — one copy improved, the rest did not. The shared body takes
@@ -285,6 +310,18 @@ installed into a scratch project on Fedora (`gh` authenticated).
   even where a `.claude/` directory exists; re-running it replaces the skill.
 - `update` cannot use a local `file://` source: the child `add` receives a folder-suffixed URL that
   is not a repository.
+- `add ./ -s <name> -a codex --copy -y` from this checkout copies `skills/<name>` byte for byte
+  (2026-10-26), locked as `sourceType: local`, source `.`.
+
+`proton-drive` CLI 0.8.0, Fedora, 2026-10-26:
+
+- `-j` goes after the subcommand (`filesystem download -j …`); before it, the CLI prints usage.
+  Transfers then print one JSON line: `transferredItems`, `skippedItems`, `failedItems`,
+  `failures`. An upload whose content the cloud already has counts as skipped.
+- A missing remote file prints `Node not found: <name>` and exits 1 (older notes in the consumers
+  say it exits 0). One missing path fails a whole multi-path download, so download one file at a
+  time.
+- `filesystem list -j <folder>` prints an array of nodes; the name is `name.value`.
 
 ## Found while surveying (fix in the source repos)
 
@@ -307,5 +344,5 @@ installed into a scratch project on Fedora (`gh` authenticated).
 2. Pilot `end-session`: write its generic body with step 0 and hooks; fill `workspace.md`,
    `issue-tracker.md`, `human-follow-up.md` and `docs.md` for AR (squash) and CA (merge commits, no
    companion); install into both.
-3. If updates flow, do `ship` and `releases.md`/`ship.md`, then `handoff`/`lets-go` with the machine
-   config.
+3. If updates flow, do `ship` and `releases.md`/`ship.md`. (`handoff`/`lets-go` and the machine
+   config were written early, 2026-10-26, so this repository could hand off between machines.)
