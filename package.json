@@ -9,6 +9,6 @@
   },
   "scripts": {
     "build": "node scripts/build-settings.mjs",
-    "check": "node scripts/build-settings.mjs --check && node scripts/lint-agent-neutrality.mjs && node --test scripts/"
+    "check": "node scripts/build-settings.mjs --check && node scripts/lint-agent-neutrality.mjs && node --test 'scripts/*.test.mjs'"
   }
 }
