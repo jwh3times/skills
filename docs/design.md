@@ -2,7 +2,8 @@
 
 Status: decided 2026-10-26 (see Decisions); pilot step 1 done; `end-session`, `handoff`, `lets-go`,
 `ship` and `docs-updater` written and installed only in this repository, carrying ApexRacers' fixes
-through #456; the consumer pilot (step 2) waits for the user's go-ahead.
+through #456. Pilot step 2 is done in ApexRacers (apexracers#458, 2026-10-27); causet and the
+other consumers wait for the user's go-ahead.
 
 ## Goal
 
@@ -416,7 +417,21 @@ installed into a scratch project on Fedora (`gh` authenticated).
    repository.~~ Done 2026-10-26; see Verified.
 2. Pilot `end-session`: write its generic body with step 0 and hooks; fill `workspace.md`,
    `issue-tracker.md`, `human-follow-up.md` and `docs.md` for AR (squash) and CA (merge commits, no
-   companion); install into both, with `docs-updater`, which its docs step runs.
+   companion); install into both, with `docs-updater`, which its docs step runs. **AR done
+   2026-10-27** (apexracers#458, all five skills, the user's flow waiver, since AR's development
+   flow counts `scripts/` as code). What it found:
+   - `npx skills add jwh3times/skills ... -a codex --copy -y` replaced AR's four hand-copied skills
+     in place and left its third-party skills alone; `npm run sync:agents` regenerated the mirror.
+   - `ship` ran end to end on a `per-merge` repository: build level, next-version, changelog section
+     and footer link, `Changelog check`, fast checks. `docs-updater` found drift the hand edits
+     missed (two required checks absent from AGENTS.md) and gaps in AR's `Doc map`.
+   - A one-line link fix in AR's privacy matrix source failed its required Driver Privacy Contract
+     check, which pins that document's hash. Hence the `pinned` marker and its discovery hint.
+   - Stale references to a renamed file sat in the companion and the private wiki, outside the
+     `Doc map`. Hence docs-updater's wider rename search, and wiki fixes only after the merge.
+   - AR's third-party `wizard` skill named `human-actions.md`; it was edited by hand, so the next
+     `mattpocock/skills` install of it will undo that line.
+   CA is next.
 3. ~~If updates flow, do `ship` and `releases.md`/`ship.md`.~~ Written early, 2026-10-27, by the
    user's choice, so the pilot can install all four skills. (`handoff`/`lets-go` and the machine
    config were written early, 2026-10-26, so this repository could hand off between machines.)
