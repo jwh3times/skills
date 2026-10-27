@@ -38,7 +38,7 @@ names stay in `docs/agents/triage-labels.md`.
 
 ## Security findings
 
-- **Read by:** end-session
+- **Read by:** docs-updater, end-session
 - **Value:** where a security finding is recorded before its fix ships — a draft repository
   advisory (optionally with a draft board item), a private issue labelled `security`, a named
   private document, or the process in `SECURITY.md`. Never a public issue.

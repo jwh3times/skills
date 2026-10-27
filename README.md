@@ -10,11 +10,12 @@ identical in every repository; what is specific to a repository lives in that re
 | `handoff` | Hands the session to another machine through the Handoffs folder, then runs `end-session`. |
 | `lets-go` | Resumes the active handoff on the other machine. Needs `handoff` installed beside it. |
 | `ship` | Takes a finished branch to an open PR: release level, docs, changelog, human follow-ups, fast checks. |
+| `docs-updater` | Finds where the docs and the code disagree and fixes the docs, or reports it in `check` mode. `ship` and `end-session` run it. |
 
 ## Install, and later update
 
 ```bash
-npx skills add jwh3times/skills -s end-session -s handoff -s lets-go -s ship -a codex --copy -y
+npx skills add jwh3times/skills -s end-session -s handoff -s lets-go -s ship -s docs-updater -a codex --copy -y
 node scripts/sync-agents.mjs   # mirror .agents/skills/ into .claude/skills/ for Claude Code
 ```
 

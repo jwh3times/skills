@@ -1,13 +1,13 @@
 # Shared skills: design
 
-Status: decided 2026-10-26 (see Decisions); pilot step 1 done; `end-session`, `handoff`, `lets-go`
-and `ship` written and installed only in this repository, carrying ApexRacers' fixes through #456;
-the consumer pilot (step 2) waits for the user's go-ahead.
+Status: decided 2026-10-26 (see Decisions); pilot step 1 done; `end-session`, `handoff`, `lets-go`,
+`ship` and `docs-updater` written and installed only in this repository, carrying ApexRacers' fixes
+through #456; the consumer pilot (step 2) waits for the user's go-ahead.
 
 ## Goal
 
-Publish the skills the user wrote — `ship`, `end-session`, `handoff`, `lets-go`, and possibly
-`docs-updater` — from this one repository, installable into any repository. Installing adapts a skill
+Publish the skills the user wrote — `ship`, `end-session`, `handoff`, `lets-go` and `docs-updater` —
+from this one repository, installable into any repository. Installing adapts a skill
 to its repository, but **by writing settings, not by editing the skill**: the skill body stays
 identical everywhere so fixes flow to every repository by re-running the install (see Install and update).
 
@@ -168,6 +168,15 @@ a re-run cannot advance twice; HV's and MA's relative `npm version minor|major` 
 
 ### `docs/agents/docs.md` — new
 
+As built (2026-10-27, the user's choice): one `Doc map` replaces both `Docs refresh` and `Session
+doc routing`. Each document carries what it owns, **when** to update it (the change kinds and paths
+that AR's, GT's and NC's trigger matrices list, turned around per document) and an optional marker:
+`frozen`, `append-only`, `amend-only`, `owner-only` (NC's `LICENSE`, open product questions) or
+`ship-owned` (the changelog's sections and the version file). A **Never in public docs** list holds
+NC's and GT's private content kinds. `Drift probes` holds each agent file's "how to detect drift";
+`Docs validation` is read by docs-updater too. `ship` always runs `docs-updater`, so PG's inline
+list becomes its `Doc map`. `Generated-config check` (workspace) gains the regenerate command.
+
 | Setting | Found |
 | --- | --- |
 | Refresh method (built as `Docs refresh`) | `docs-updater` agent (AR, CH, GT, HV, LB, MA, VA; NC reads the agent file when no agent harness exists); `docs-updater` skill (CA); inline doc list (PG) |
@@ -309,8 +318,11 @@ per-project install and the shared scripts are recorded under Architecture.
    of that skill. Installing from here repoints the lock entry. Add `mattpocock/skills` skills by
    name (`-s`), never `--all`, so theirs cannot come back.
 5. **`docs-updater` becomes a shared skill** reading `docs/agents/docs.md`. `ship` and
-   `end-session` run it in a subagent where one exists; each repository deletes its
-   `.claude/agents/docs-updater.md` when the skill is installed. Ported after `ship`.
+   `end-session` run it in a subagent where one exists, after completing its settings themselves
+   (a subagent cannot ask); each repository deletes its `.claude/agents/docs-updater.md` when the
+   skill is installed. Built 2026-10-27 with NC's `fix` and `check` modes and a scope (a diff range,
+   a list of changes, or a full audit). It leaves its edits uncommitted and returns human actions
+   to its caller, which runs the follow-up procedure once (CH: one agent publishes each).
 6. **License: MIT**, at the root. `skills/handoff/LICENSE` keeps Matt Pocock's MIT notice (and
    `lets-go`'s too, if it also derives from his work), because a skill folder installs alone.
 7. **Layout:** skills in `skills/<name>/`; catalog in `settings/` with
@@ -367,6 +379,13 @@ installed into a scratch project on Fedora (`gh` authenticated).
 - `filesystem list -j <folder>` prints an array of nodes; the name is `name.value`.
 
 ## Found while surveying (fix in the source repos)
+
+- LB's `scripts/check-docs.mjs` parses `.claude/agents/docs-updater.md` for the canonical document
+  list and fails when one is missing. At LB's install, point it at the `Doc map` in
+  `docs/agents/docs.md`.
+- MA and VA keep area guides in `docs/agents/`, beside the settings files. Check their names
+  against the settings topics (`docs`, `releases`, `ship`, `workspace`, `handoffs`,
+  `issue-tracker`, `human-follow-up`) at their install.
 
 - VA `ship` edits the PR body to link the private follow-up issue and wiki page, against Decision 2.
   The shared body keeps those links in the report; VA's `dev-flow.md` or follow-up doc changes at

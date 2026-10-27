@@ -3,7 +3,7 @@
 name: ship
 description: Ship the current branch — evaluate its SemVer release impact, refresh the docs, write the changelog entry for the version this merge will mint, file its human follow-ups, run the fast checks, push, and open or update the PR. Use when a feature branch is ready for review, or when the user says "ship it", "open a PR", or "push this".
 metadata:
-  settings: workspace issue-tracker human-follow-up docs releases ship
+  settings: workspace issue-tracker human-follow-up releases ship
 ---
 
 # Ship
@@ -23,8 +23,7 @@ runs the full test suites: CI owns them, and running them here makes the skill s
 ## 0. Settings
 
 This skill reads `docs/agents/workspace.md`, `docs/agents/issue-tracker.md`,
-`docs/agents/human-follow-up.md`, `docs/agents/docs.md`, `docs/agents/releases.md` and
-`docs/agents/ship.md`. Follow `.agents/skills/ship/settings/README.md` to read them and complete any
+`docs/agents/human-follow-up.md`, `docs/agents/releases.md` and `docs/agents/ship.md`. Follow `.agents/skills/ship/settings/README.md` to read them and complete any
 that are missing; the definitions sit beside it. Resolve each `discover:` value once, here, and
 reuse it below.
 
@@ -156,30 +155,26 @@ written.
 
 ## 5. Refresh the docs
 
-Follow `Docs refresh`. When it names `docs-updater`, run it as a subagent where the harness has
-one; otherwise read its definition and follow it yourself. Scope it to this branch's diff, not a
-full audit:
+Run the `docs-updater` skill in `fix` mode, scoped to this branch's diff, not a full audit — in a
+subagent where the harness has one, told to follow `.agents/skills/docs-updater/SKILL.md`;
+otherwise follow it yourself. A subagent cannot ask the user, so complete its settings first, here,
+by following its step 0.
 
 ```bash
-git diff --stat "$(git merge-base origin/main HEAD)"..HEAD
+range="$(git merge-base origin/main HEAD)..HEAD"
 ```
 
-Tell it what changed and why. Tell it to leave the changelog and the `Version file` alone, because
-this skill writes both. The PR is not merged yet, so private roadmap, archive and product-status
-claims stay as they are: `end-session` reconciles those after the merge. Changes in the companion
-are committed there as its own repository, never in this one: with `Companion commit policy`
-`commit` or `ship`, commit and push them; with `ask`, show the diff and ask first. Run its
-**Before committing** checks either way.
-
-With a document list instead, read each listed document against the diff, treat executable config
-over prose as the authority, and fix what is stale. If nothing is stale, say so.
+Tell it what changed and why, that it was invoked by `ship` on an unmerged branch, and that this
+skill writes the changelog and the `Version file`. It leaves its edits uncommitted and returns the
+human actions it found for step 6. Companion edits are committed there as its own repository, never
+in this one: with `Companion commit policy` `commit` or `ship`, commit and push them; with `ask`,
+show the diff and ask first. Run its **Before committing** checks either way.
 
 ## 6. Human follow-ups
 
 Run the `## Procedure` in `.agents/skills/ship/settings/human-follow-up.md` for every required human
-action this branch leaves, before the PR opens. Hand the inventory to the docs refresher when it
-files follow-ups too, and reconcile rather than duplicate; on a re-ship, reuse the records already
-made. A follow-up never lives only in the changelog or the PR body. Its links go in the report and
+action this branch leaves, before the PR opens, including those `docs-updater` returned. Reconcile
+rather than duplicate; on a re-ship, reuse the records already made. A follow-up never lives only in the changelog or the PR body. Its links go in the report and
 private records, never in the public PR.
 
 ## 7. Write the changelog (release)
