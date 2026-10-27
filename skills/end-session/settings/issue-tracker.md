@@ -13,7 +13,7 @@ names stay in `docs/agents/triage-labels.md`.
 
 ## Private issue repository
 
-- **Read by:** end-session
+- **Read by:** end-session, ship
 - **Value:** `none`, a literal `owner/name`, or a `discover:` value — the repository that holds
   issues too sensitive for the public tracker.
 - **Discover:** the companion's remote (`git -C private remote get-url origin`) and what
@@ -22,7 +22,7 @@ names stay in `docs/agents/triage-labels.md`.
 
 ## Board
 
-- **Read by:** end-session
+- **Read by:** end-session, ship
 - **Value:** `none`, or the GitHub project as `<owner> <number>` (the arguments `gh project` takes),
   or a `discover:` value.
 - **Discover:** `gh project list --owner <owner>`, matched to the repository by title, and links to

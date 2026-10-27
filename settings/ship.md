@@ -10,7 +10,9 @@ setting below is a `##` heading in that file.
   `only when <paths> changed` and the command that fixes a failure (e.g. `web/`: `npm run lint`;
   repo root: `npm run sync:agents:check`, fixed by `npm run sync:agents`, committing both sides).
   The list covers every required status check that can run locally, so a push that would fail one
-  is refused here instead of on the PR.
+  is refused here instead of on the PR. Entries run in order: formatters before the
+  generated-config check, which mirrors formatted sources. The changelog's own check is
+  `Changelog check` in `releases.md`, not an entry here.
 - **Discover:** the branch's required checks (`gh api repos/<owner>/<name>/rules/branches/main`
   for rulesets, else `gh api repos/<owner>/<name>/branches/main/protection --jq
   '.required_status_checks.contexts'`), each traced to the workflow job that reports it and the

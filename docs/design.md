@@ -1,7 +1,8 @@
 # Shared skills: design
 
-Status: decided 2026-10-26 (see Decisions); pilot step 1 done; `end-session`, `handoff` and `lets-go` written and installed only in this repository, carrying ApexRacers' fixes through
-#456 (`ship`'s two are in `settings/ship.md` until its port); the consumer pilot (step 2) waits for the user's go-ahead.
+Status: decided 2026-10-26 (see Decisions); pilot step 1 done; `end-session`, `handoff`, `lets-go`
+and `ship` written and installed only in this repository, carrying ApexRacers' fixes through #456;
+the consumer pilot (step 2) waits for the user's go-ahead.
 
 ## Goal
 
@@ -84,7 +85,7 @@ and `lint-agent-neutrality.mjs` are copied by hand; this repository holds their 
 and tests, and fixes land here first.
 
 **This repository installs its own skills**, so `handoff` and `lets-go` work here like anywhere
-else: `npx skills add ./ -s <name> -a codex --copy -y` copies `skills/<name>` verbatim into
+else: `npx skills@1.7.4 add ./ -s <name> -a codex --copy -y` copies `skills/<name>` verbatim into
 `.agents/skills/<name>` and locks it with source `.`. After that, `npm run build` refreshes those
 copies (`scripts/self-install.mjs`) and the `.claude/skills/` mirror, and `npm run check` fails when
 either drifts. The lock's `computedHash` goes stale on a refresh; nothing reads it, since `update`
@@ -143,6 +144,14 @@ docs-updater.
 
 ### `docs/agents/releases.md` — new everywhere except MA (VA's `ci-and-release.md` overlaps)
 
+As built (`settings/releases.md`, 2026-10-27): `Scheme` is a step setting with three
+implementations in the `ship` body — `per-merge` (AR, CH, GT, HV, MA, VA), `cut-on-line` (LB),
+`none` (NC, PG) — and `Skipped tags` (`backfill` for CH, GT, HV, MA, VA; `roll up` for AR, with an
+**Ignore** list for legacy tags) carries the fourth. Extra headings and footer links are not
+settings: `ship` uses the headings the file already has and keeps an existing link footer in its
+own pattern. The bump always sets an exact `x.y.0` computed from the `origin/main` baseline (VA), so
+a re-run cannot advance twice; HV's and MA's relative `npm version minor|major` become that.
+
 | Setting | Found |
 | --- | --- |
 | Scheme | **rollup-per-merge** (AR); **dated per merge plus backfill of skipped tags** (CH, GT, HV, MA, VA); **accumulate, cut only on a major/minor change** (LB); **none** (NC, PG — ship skips its versioning section) |
@@ -161,7 +170,7 @@ docs-updater.
 
 | Setting | Found |
 | --- | --- |
-| Refresh method | `docs-updater` agent (AR, CH, GT, HV, LB, MA, VA; NC reads the agent file when no agent harness exists); `docs-updater` skill (CA); inline doc list (PG) |
+| Refresh method (built as `Docs refresh`) | `docs-updater` agent (AR, CH, GT, HV, LB, MA, VA; NC reads the agent file when no agent harness exists); `docs-updater` skill (CA); inline doc list (PG) |
 | Docs owned | per-repo list given to the refresher |
 | Changelog owner during ship | ship (AR, HV, LB declare it); GT, MA, VA's agent claims it, so ship must say to leave it alone |
 | Private-doc routing (end-session) | file → when to update; frozen files (AR `archive.md`, LB design history, VA session history); append-only folders (AR captured API responses); amend-only dated docs (MA) |
@@ -169,14 +178,18 @@ docs-updater.
 
 ### `docs/agents/ship.md` — ship-only
 
-Defined in `settings/ship.md` (`Fast checks`, `Issue link`) ahead of the `ship` port, so
-apexracers#455 and #456 are not lost; the rest of this table joins it at the port.
+As built (2026-10-27): `settings/ship.md` holds `Fast checks` and `Issue link`. All 8 repositories
+with a `ship` define the same `<type>/<issue#>-<slug>` and `Closes`/`Part of` rule in
+`docs/agents/dev-flow.md`, so `Issue link` covers branch naming too. The PR body is not a setting:
+`ship` fills the repository's PR template and always adds the `Release level:` line (CH). NC's
+trigger table and PG's impact flags go under `Hook: before PR`. LB's and PG's linkage warnings are
+in the body, warn-only, using `Board` and `Private issue repository`.
 
 | Setting | Found |
 | --- | --- |
 | Fast checks | list of {folder, command, optional "only when these paths changed"}; must cover every required check that runs locally. AR: `web/` prettier, lint, build; root `dotnet build`, `npm run sync:agents:check`, `npm run lint:agents` (the required "Verify generated agent config" check, #455). GT adds Go `gofmt`/`go vet`. LB `dotnet format --verify-no-changes`, conditional `api:generate`. NC conditional wrangler dry-run and e2e. PG runs `test:coverage` and a 90% patch-coverage script |
 | Branch naming | `agent/<topic>` (CH, GT, HV), `<type>/<topic>` (LB, PG), `feat/…`, never `release/*` (MA), `<type>/<issue#>-<slug>` (AR, part of `Issue link`) |
-| Issue link | AR (#456, defined in its `docs/agents/dev-flow.md`): the body opens with `Closes #N` or `Part of #N`, `N` taken from the branch; `Flow waived by the user: <reason>` for a waiver; no line for dependency bumps, docs-and-agent-config-only changes and release prep. `none` elsewhere |
+| Issue link | AR (#456), and the same rule in every `dev-flow.md`: the body opens with `Closes #N` or `Part of #N`, `N` taken from the branch; `Flow waived by the user: <reason>` for a waiver; no line for dependency bumps, docs-and-agent-config-only changes and release prep. NC: one keyword per issue. VA: slice branches `feat/<spec#>-slice-<n>-<slug>` |
 | PR body | template path; extra lines: `Release level:` (CH), `Fixes #NN` (PG), template checklist (AR, NC) |
 | Hook: review before PR | NC's trigger table; PG's impact flags feeding the PR body |
 | Hook: issue-linkage warnings | LB (board, Track/Gate, private-tracker leak), PG, NC (`Closes #N`) |
@@ -237,7 +250,13 @@ the best version, which keeps the catalog above short.
 - Format before regenerating generated config (HV, MA).
 - Fallbacks when `docs-updater` or `gh` is unavailable (NC, CH).
 - Fast checks run every `Fast checks` entry, and a red one refuses the push; a failure's fix
-  command, when the entry names one, is offered in the report (AR #455).
+  command, when the entry names one, is offered in the report (AR #455). After a fix that writes,
+  the list runs again from the top (HV, MA: mirrors are generated from formatted sources).
+- Wait for the tag of a just-merged PR before computing the next version (HV); name another open PR
+  whose changelog claims the same version (MA).
+- Up to date with `origin/main` before shipping, offering a merge (NC).
+- Run the docs agent's definition inline where the harness cannot dispatch it (NC).
+- Human follow-ups before the PR (Decision 3), their links never in the public body (Decision 2).
 - The issue link line, when `Issue link` is set (AR #456): take `N` from the branch per its
   pattern and read the issue (`gh issue view <N> --json title,labels,body`); open the body with
   the finishing line or the slice line. A branch with no number is exempt work: open with the
@@ -349,6 +368,16 @@ installed into a scratch project on Fedora (`gh` authenticated).
 
 ## Found while surveying (fix in the source repos)
 
+- VA `ship` edits the PR body to link the private follow-up issue and wiki page, against Decision 2.
+  The shared body keeps those links in the report; VA's `dev-flow.md` or follow-up doc changes at
+  its install.
+- MA's `dev-flow.md` says a `Mints **vX.Y.Z**.` line follows the link line, but its `ship` never
+  writes it. The shared body writes the version the merge will mint beside `Release level:`; MA's
+  doc adopts that wording at its install.
+- `npx skills` run inside this repository resolves to this repository's own package (also named
+  `skills`, no bin) and fails with "could not determine executable to run". Name the version:
+  `npx skills@1.7.4`.
+
 - ~~AR `ship` never runs `sync:agents:check`, though Agent Config Sync is a required check
   there.~~ Fixed in AR #455; the shared `Fast checks` setting must cover required checks.
 - CH, HV and VA's `skills-lock.json` record `handoff` as `mattpocock/skills`; the content is the
@@ -369,5 +398,6 @@ installed into a scratch project on Fedora (`gh` authenticated).
 2. Pilot `end-session`: write its generic body with step 0 and hooks; fill `workspace.md`,
    `issue-tracker.md`, `human-follow-up.md` and `docs.md` for AR (squash) and CA (merge commits, no
    companion); install into both.
-3. If updates flow, do `ship` and `releases.md`/`ship.md`. (`handoff`/`lets-go` and the machine
+3. ~~If updates flow, do `ship` and `releases.md`/`ship.md`.~~ Written early, 2026-10-27, by the
+   user's choice, so the pilot can install all four skills. (`handoff`/`lets-go` and the machine
    config were written early, 2026-10-26, so this repository could hand off between machines.)

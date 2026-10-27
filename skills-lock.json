@@ -15,6 +15,11 @@
       "source": ".",
       "sourceType": "local",
       "computedHash": "278b594857b64fc0dd6f49423568a38aa96c5e392ff2abfe47a4e7cc4ee5cc05"
+    },
+    "ship": {
+      "source": ".",
+      "sourceType": "local",
+      "computedHash": "d2041c922f119cdd16f9f8e865fc12961f38d757121df42dc1fca3181aba1090"
     }
   }
 }

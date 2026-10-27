@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // This repository installs its own skills, so the handoff and lets-go workflow runs here too. The
-// install is `npx skills add ./ -s <name> -a codex --copy -y`, which copies skills/<name> verbatim
+// install is `npx skills@1.7.4 add ./ -s <name> -a codex --copy -y`, which copies skills/<name> verbatim
 // into .agents/skills/<name> and records it in skills-lock.json with source ".". After an edit to
 // skills/, this script refreshes those copies the same way, so they never drift:
 //
