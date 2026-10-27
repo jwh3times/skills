@@ -1,19 +1,21 @@
 # Docs
 
-## Docs refresh
+## Doc map
 
-- `docs/design.md` — the architecture, settings catalog, Decisions, Verified and Unverified, and
-  Pilot plan.
-- `AGENTS.md` — durable rules for working in this repository.
-- `README.md` — what is published, and the install command.
+- `docs/design.md` — the architecture, settings catalog, Decisions, Verified and Unverified, Pilot
+  plan, and Found while surveying. **When:** a decision is settled; a setting is added, renamed or
+  removed (`settings/`); a `skills` CLI question is tested; the pilot advances (the Status line and
+  Pilot plan); a consumer-repository problem turns up.
+- `AGENTS.md` — durable rules for working in this repository. **When:** the layout, the build and
+  check scripts, or a publishing rule changes.
+- `README.md` — what is published and how to install it. **When:** a skill is added to or removed
+  from `skills/`, or the install command changes.
 
-## Session doc routing
+## Drift probes
 
-- `docs/design.md` — when a decision is settled, a `skills` CLI question is tested (Verified and
-  Unverified), the pilot advances (Status line and Pilot plan), or a consumer-repository problem
-  turns up (Found while surveying).
-- `AGENTS.md` — when a durable rule for working in this repository changes.
-- `README.md` — when what is published, or how to install it, changes.
+- Published skills: `skills/*/SKILL.md`, against the `README.md` table and install command and the
+  `docs/design.md` Status line.
+- Scripts: `scripts` in `package.json` and the files in `scripts/`, against `AGENTS.md`.
 
 ## Docs validation
 

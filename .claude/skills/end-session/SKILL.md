@@ -123,9 +123,15 @@ already started (docs-updater, `ship`): reconcile those rather than duplicating 
 
 ## 5. Docs
 
-Update the documents in `Session doc routing` that the session's discoveries bear on, honoring each
-one's `frozen`, `append-only` or `amend-only` marker. If `ship` already refreshed docs on this
-branch, verify rather than redo, and fill only the gaps.
+Run the `docs-updater` skill on the session's work, in a subagent where the harness has one, told
+to follow `.agents/skills/docs-updater/SKILL.md`; otherwise follow it yourself. A subagent cannot
+ask the user, so complete its settings first, here, by following its step 0. Use `fix` mode for
+work not yet merged, and `check` mode for work `ship` already refreshed and merged, opening an
+issue for any drift it reports. Tell it this is `end-session`, and give it the session's
+discoveries as a list of changes beside the diff: decisions and findings land in the `Doc map`
+documents whose **when** they match, honoring each one's marker. Run step 4's procedure for any
+human actions it returns. Its edits come back uncommitted, and join step 6's question about
+uncommitted work.
 
 - **Companion.** When the `Private companion` is set and its checkout exists, inspect it from its
   own root: the outer repository's `git log`, `git show` and `git diff` cannot see inside it. When
@@ -136,7 +142,6 @@ branch, verify rather than redo, and fill only the gaps.
   debt to report; `ship` writes the changelog.
 - **One tracker.** A backlog, roadmap, or TODO file the session added to the tree duplicates the
   issue tracker; offer to move its content into issues.
-- Run `Docs validation`.
 
 ## 6. Workspace
 

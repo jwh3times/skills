@@ -1,6 +1,11 @@
 {
   "version": 1,
   "skills": {
+    "docs-updater": {
+      "source": ".",
+      "sourceType": "local",
+      "computedHash": "07dda3e2a51eef8ec12501b2f17ea812edd781597c1ac0ea8d6a3662417397c9"
+    },
     "end-session": {
       "source": ".",
       "sourceType": "local",

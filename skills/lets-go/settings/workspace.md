@@ -6,7 +6,7 @@ it may be cleaned. Each setting below is a `##` heading in that file.
 
 ## Private companion
 
-- **Read by:** end-session, handoff, lets-go, ship
+- **Read by:** docs-updater, end-session, handoff, lets-go, ship
 - **Value:** `none`, or the companion's checkout path (normally `private/`, its own Git repository,
   ignored by this one) and its repository as a literal `owner/name` or a `discover:` value.
 - **Discover:** `private/.git` exists → `git -C private remote get-url origin`. Repositories that
@@ -67,10 +67,11 @@ it may be cleaned. Each setting below is a `##` heading in that file.
 
 ## Generated-config check
 
-- **Read by:** end-session
+- **Read by:** docs-updater, end-session
 - **Value:** the command that verifies generated agent config (normally
-  `node scripts/sync-agents.mjs --check`), and when to run it: `always`, or `when agent sources
-  changed` (`.agents/skills/`, `.claude/agents/`).
+  `node scripts/sync-agents.mjs --check`), the command that regenerates it (normally
+  `node scripts/sync-agents.mjs`), and when to run them: `always`, or `when agent sources changed`
+  (`.agents/skills/`, `.claude/agents/`).
 - **Discover:** `scripts/sync-agents.mjs`, a `sync:agents:check` script, and the CI workflow that
   runs it.
 
