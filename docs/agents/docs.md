@@ -8,6 +8,9 @@
   Pilot plan); a consumer-repository problem turns up.
 - `AGENTS.md` — durable rules for working in this repository. **When:** the layout, the build and
   check scripts, or a publishing rule changes.
+- `skills/*/SKILL.md` — each skill's contract with the skills that call it (what one passes in, what
+  the other returns or owes). **When:** a skill changes what it takes from or hands to another
+  skill.
 - `README.md` — what is published and how to install it. **When:** a skill is added to or removed
   from `skills/`, or the install command changes.
 
