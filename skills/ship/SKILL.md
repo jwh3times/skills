@@ -166,8 +166,8 @@ range="$(git merge-base origin/main HEAD)..HEAD"
 
 Tell it what changed and why, that it was invoked by `ship` on an unmerged branch, and that this
 skill writes the changelog and the `Version file`. It leaves its edits uncommitted and returns the
-human actions it found for step 6, and any `Follow-up wiki` search it owes after the merge. Companion edits are committed there as its own repository, never
-in this one: with `Companion commit policy` `commit` or `ship`, commit and push them; with `ask`,
+human actions it found for step 6, and any `Follow-up wiki` search it owes after the merge.
+Companion edits are committed there as its own repository, never in this one: with `Companion commit policy` `commit` or `ship`, commit and push them; with `ask`,
 show the diff and ask first. Run its **Before committing** checks either way.
 
 ## 6. Human follow-ups
