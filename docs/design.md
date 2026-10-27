@@ -3,7 +3,8 @@
 Status: decided 2026-10-26 (see Decisions); pilot step 1 done; `end-session`, `handoff`, `lets-go`,
 `ship` and `docs-updater` written, carrying ApexRacers' fixes through #456, and installed in this
 repository and in ApexRacers (pilot step 2, apexracers#458, 2026-10-27); causet's install is in
-review (causet#342); the other consumers wait for the user's go-ahead.
+review (causet#342); caitlyn-holland-vip's install is in review (caitlyn-holland-vip#242); the other
+consumers wait for the user's go-ahead.
 
 ## Goal
 
@@ -126,9 +127,10 @@ step on or off), **step** (selects one of several implementations), **hook** (re
 | Board fields and values | AR Status (Todo/In Progress/Blocked/Parked/Done) + Blocked by; HV `Deferred` for Parked; CH, CA Status/Gate/Area; GT Status/Blocked By/Chain/Order/Gate/ADR/Triage; LB Track/Gate; MA Phase/Priority/Size/Status (auto-adds public issues); NC Status/Stage/Gate; VA Status/Gate/Area/Next Action/Blocking Item |
 | Security findings | draft repository advisory (AR — plus a draft board item — CH, CA, HV); private issue labelled `security` (LB); private doc (GT `security-limitations.md`, MA README register, VA tracker + wiki); `SECURITY.md` (PG) |
 
-Labels stay in `triage-labels.md`. Extras beyond the five canonical labels: CA
-`human-action-required`; LB `blocked-by-human`, `security`, `product-decision`; NC
-`bug`/`enhancement`/`documentation`. CH has no `triage-labels.md`.
+Labels stay in `triage-labels.md`, or in `issue-tracker.md`'s own section where a repository keeps
+them there (CH). Extras beyond the five canonical labels: CA `human-action-required`; LB
+`blocked-by-human`, `security`, `product-decision`; NC `bug`/`enhancement`/`documentation`. CH has
+no `triage-labels.md`.
 
 ### `docs/agents/human-follow-up.md` — exists under four names; normalize
 
@@ -433,7 +435,23 @@ installed into a scratch project on Fedora (`gh` authenticated).
      `Doc map`. Hence docs-updater's wider rename search, and wiki fixes only after the merge.
    - AR's third-party `wizard` skill named `human-actions.md`; it was edited by hand, so the next
      `mattpocock/skills` install of it will undo that line.
-   CA's install is in review (causet#342). What it found:
+   CA's install is in review (causet#342). CH's (caitlyn-holland-vip#242) followed, the first beyond
+   the pilot pair. What CH found:
+   - CH forks its 13 `mattpocock/skills` skills in place (its ADR-0006), so a lock entry does not
+     mean frozen. docs-updater skips only the skills the `Doc map` marks `frozen`, and discovery
+     proposes a lock-listed skill as `frozen` unless the repository forks it. CH recorded the
+     shared five in a new ADR-0011 beside ADR-0006.
+   - The shared `handoff` replaces `mattpocock/skills`' `handoff` under the same name (Decision 4),
+     so a forked router that names `/handoff` (CH's `ask-matt`) silently changes meaning. At each
+     install, check the repository's routers and phase-boundary docs for `/handoff`.
+   - CH's linter rejected a literal U+FEFF in `handoff-map.mjs` (fixed in #8), and its coverage
+     counts `scripts/*.mjs`, so a consumer that globs `scripts/` excludes
+     `lint-agent-neutrality.mjs` and its test from coverage, as it does `sync-agents`.
+   - CH keeps its triage labels in `issue-tracker.md`, not `triage-labels.md`; end-session and the
+     definitions now accept either. end-session regained the GitHub MCP fallback `ship` has.
+   - CH's `sync:agents` runs Prettier over `.agents/**/*.md` first, so its `.prettierignore` lists
+     the installed skills to keep them byte for byte.
+   What CA found:
    - CA's lock lists `mattpocock/skills` skills beside the shared ones. Hence docs-updater skips
      every installed skill's body, and `Doc map` discovery proposes those folders as `frozen`.
    - CA's `Doc map` includes its public wiki's usage pages, so docs-updater's after-the-merge wiki
