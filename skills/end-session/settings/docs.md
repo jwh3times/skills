@@ -3,6 +3,15 @@
 
 `docs/agents/docs.md` — which documents a session keeps current, and how they are checked.
 
+## Docs refresh
+
+- **Read by:** ship
+- **Value:** how `ship` brings the docs in line with a branch: `docs-updater` (the repository's
+  docs agent or skill, which owns its own list of documents), or a bulleted list of documents to
+  check against the diff, each with what it covers.
+- **Discover:** `.claude/agents/docs-updater.md`, a `docs-updater` skill, and the docs map in
+  `AGENTS.md`; the existing `ship` skill's docs step.
+
 ## Session doc routing
 
 - **Read by:** end-session

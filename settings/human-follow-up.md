@@ -7,28 +7,28 @@ finds today's values.
 
 ## Follow-up destination
 
-- **Read by:** end-session
+- **Read by:** end-session, ship
 - **Value:** where each follow-up becomes trackable: issues in a repository (`owner/name`, or a
   `discover:` value), or a checkbox in one public tracking issue (`owner/name#n`).
 - **Discover:** the older files above, and existing skills' human follow-up sections.
 
 ## Follow-up label
 
-- **Read by:** end-session
+- **Read by:** end-session, ship
 - **Value:** the label a follow-up issue carries (`ready-for-human`, `human-action-required`, …),
   or `none` for a tracking-issue checkbox.
 - **Discover:** as above, and `docs/agents/triage-labels.md`.
 
 ## Follow-up board
 
-- **Read by:** end-session
+- **Read by:** end-session, ship
 - **Value:** `none`, `same as Board` (the `Board` setting in `issue-tracker.md`), or a separate
   project as `<owner> <number>` or a `discover:` value, with the fields to set.
 - **Discover:** as above.
 
 ## Follow-up wiki
 
-- **Read by:** end-session
+- **Read by:** end-session, ship
 - **Value:** `none`, or the wiki that holds step-by-step instructions: its repository and index
   page (e.g. the destination repository's wiki, index `human-todo`), plus whether pushing to it is
   pre-authorized (`push without asking` or `ask before pushing`).

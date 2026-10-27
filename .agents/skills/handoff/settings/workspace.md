@@ -6,7 +6,7 @@ it may be cleaned. Each setting below is a `##` heading in that file.
 
 ## Private companion
 
-- **Read by:** end-session, handoff, lets-go
+- **Read by:** end-session, handoff, lets-go, ship
 - **Value:** `none`, or the companion's checkout path (normally `private/`, its own Git repository,
   ignored by this one) and its repository as a literal `owner/name` or a `discover:` value.
 - **Discover:** `private/.git` exists → `git -C private remote get-url origin`. Repositories that
@@ -15,7 +15,7 @@ it may be cleaned. Each setting below is a `##` heading in that file.
 
 ## Workspace status command
 
-- **Read by:** end-session, handoff, lets-go
+- **Read by:** end-session, handoff, lets-go, ship
 - **Value:** commands that show the state of the checkout and, when there is one, the companion.
 - **Discover:** a repository script that reports both trees (`scripts/repository-status.mjs` and
   the like). Otherwise propose `git status --short --branch` plus, with a companion,
@@ -23,7 +23,7 @@ it may be cleaned. Each setting below is a `##` heading in that file.
 
 ## Companion commit policy
 
-- **Read by:** end-session
+- **Read by:** end-session, ship
 - **Value:** one of
   - `ask` — report the companion's diff and ask before committing;
   - `commit` — commit and push inside the companion as its own repository, without asking;
