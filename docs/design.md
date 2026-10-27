@@ -1,6 +1,7 @@
 # Shared skills: design
 
-Status: decided 2026-10-26 (see Decisions); pilot step 1 done; `end-session`, `handoff` and `lets-go` written and installed only in this repository; the consumer pilot (step 2) waits for the user's go-ahead.
+Status: decided 2026-10-26 (see Decisions); pilot step 1 done; `end-session`, `handoff` and `lets-go` written and installed only in this repository, carrying ApexRacers' fixes through
+#456 (`ship`'s two are in `settings/ship.md` until its port); the consumer pilot (step 2) waits for the user's go-ahead.
 
 ## Goal
 
@@ -100,7 +101,7 @@ step on or off), **step** (selects one of several implementations), **hook** (re
 
 | Setting | Found | Kind |
 | --- | --- | --- |
-| Merge style | squash: AR, LB. Merge commits: the other 8 (measured from the last 5 merged PRs). Selects finished-branch detection: PR `headRefOid` equals branch tip (squash), `git branch --merged` (merge), with LB's tree comparison when `main` has moved on | step |
+| Merge style | squash: AR, LB. Merge commits: the other 8 (measured from the last 5 merged PRs). Not a setting after all: end-session's one PR-based branch rule serves both (see Fixed in the skill body) | — |
 | Private companion | none (CA, PG) or `private/`; repo named in the file (AR, HV, VA) or discovered from the checkout (LB, NC, GT, MA, CH — deliberately keeps the locator out of the public tree) | value |
 | Companion status command | `node scripts/repository-status.mjs --check-private` (AR), `git -C private status` (others) | value |
 | Companion commit/push policy | report and ask (AR), leave to `/ship` (CH), never without authorization (HV), expected (LB, NC, VA), gated: diff review + value scan + visibility check + approval (MA) | step |
@@ -168,10 +169,14 @@ docs-updater.
 
 ### `docs/agents/ship.md` — ship-only
 
+Defined in `settings/ship.md` (`Fast checks`, `Issue link`) ahead of the `ship` port, so
+apexracers#455 and #456 are not lost; the rest of this table joins it at the port.
+
 | Setting | Found |
 | --- | --- |
-| Fast checks | list of {folder, command, optional "only when these paths changed"}. AR: `web/` prettier, lint, build; root `dotnet build`. GT adds Go `gofmt`/`go vet`. LB `dotnet format --verify-no-changes`, conditional `api:generate`. NC conditional wrangler dry-run and e2e. PG runs `test:coverage` and a 90% patch-coverage script |
-| Branch naming | `agent/<topic>` (CH, GT, HV), `<type>/<topic>` (LB, PG), `feat/…`, never `release/*` (MA) |
+| Fast checks | list of {folder, command, optional "only when these paths changed"}; must cover every required check that runs locally. AR: `web/` prettier, lint, build; root `dotnet build`, `npm run sync:agents:check`, `npm run lint:agents` (the required "Verify generated agent config" check, #455). GT adds Go `gofmt`/`go vet`. LB `dotnet format --verify-no-changes`, conditional `api:generate`. NC conditional wrangler dry-run and e2e. PG runs `test:coverage` and a 90% patch-coverage script |
+| Branch naming | `agent/<topic>` (CH, GT, HV), `<type>/<topic>` (LB, PG), `feat/…`, never `release/*` (MA), `<type>/<issue#>-<slug>` (AR, part of `Issue link`) |
+| Issue link | AR (#456, defined in its `docs/agents/dev-flow.md`): the body opens with `Closes #N` or `Part of #N`, `N` taken from the branch; `Flow waived by the user: <reason>` for a waiver; no line for dependency bumps, docs-and-agent-config-only changes and release prep. `none` elsewhere |
 | PR body | template path; extra lines: `Release level:` (CH), `Fixes #NN` (PG), template checklist (AR, NC) |
 | Hook: review before PR | NC's trigger table; PG's impact flags feeding the PR body |
 | Hook: issue-linkage warnings | LB (board, Track/Gate, private-tracker leak), PG, NC (`Closes #N`) |
@@ -231,18 +236,37 @@ the best version, which keeps the catalog above short.
   (`git diff origin/main...HEAD -- CHANGELOG.md | grep '^+## \['`).
 - Format before regenerating generated config (HV, MA).
 - Fallbacks when `docs-updater` or `gh` is unavailable (NC, CH).
+- Fast checks run every `Fast checks` entry, and a red one refuses the push; a failure's fix
+  command, when the entry names one, is offered in the report (AR #455).
+- The issue link line, when `Issue link` is set (AR #456): take `N` from the branch per its
+  pattern and read the issue (`gh issue view <N> --json title,labels,body`); open the body with
+  the finishing line or the slice line. A branch with no number is exempt work: open with the
+  waiver line when the user waived the flow, otherwise omit the line for the `Exempt` kinds. When
+  the branch's number and the issue disagree, or finishing versus slice is unclear, ask before
+  creating the PR. Refreshing an existing PR's body keeps its link line. With `Issue link: none`
+  the body is written as before.
 
 **end-session**
-- Use the memory directory the harness supplies; never derive the slug (LB). AR derives it, which
-  CH, LB and PG warn against.
+- Use the memory directory the harness supplies; never derive the slug (LB); with none named,
+  skip the step. AR derived it, which CH, LB and PG warn against, until AR #455.
 - Check the `gh` token's `project` scope before touching the board (VA); otherwise board writes fail
   silently.
 - List the private follow-up repo explicitly with `-R` (HV).
 - No `--limit 20` on merged-PR lookups (MA misses older branches).
+- Finished branches by PR, not `git branch --merged` (AR #449), after `git fetch --prune origin`,
+  with PR fields read into named variables (AR #452). One rule serves both merge styles, so it is
+  not a setting. It is deliberately broader than AR's (decided 2026-10-26): AR calls a branch
+  finished only when its PR is `MERGED` at exactly the branch tip; the shared body also accepts a
+  tip that is an ancestor of the merged head (a stale local copy) and a branch with no PR whose tip
+  is on `origin/main` (merged without a PR, or no commits of its own). Both add only branches whose
+  every commit is already merged, and deleting still waits for a yes.
 
 **handoff / lets-go**
 - Re-pull the map immediately before writing; clear with compare-and-swap (`clear --expect`, LB);
-  write atomically via temp file and rename (CA); re-download and verify after every push.
+  write atomically via temp file and rename (CA); re-download and verify after every push (AR
+  #455: the cloud copy, into a temporary directory). An edited document is re-pushed without the
+  map (`push`, AR #455). All of it lives in `handoff-map.mjs`, so the bodies carry no transfer
+  commands.
 - Push the document before the map that names it (VA); fail loudly on a silent push (MA).
 - Folder discovery: VA's (any case, reparse-point aware, errors on ambiguity).
 - Claim the handoff (clear) right after reading it, before reconciling the checkout (CH).
@@ -325,7 +349,8 @@ installed into a scratch project on Fedora (`gh` authenticated).
 
 ## Found while surveying (fix in the source repos)
 
-- AR `ship` never runs `sync:agents:check`, though Agent Config Sync is a required check there.
+- ~~AR `ship` never runs `sync:agents:check`, though Agent Config Sync is a required check
+  there.~~ Fixed in AR #455; the shared `Fast checks` setting must cover required checks.
 - CH, HV and VA's `skills-lock.json` record `handoff` as `mattpocock/skills`; the content is the
   user's. `skills update` could overwrite it. (CH and VA store the same hash for different files.)
 - No repository locks `handoff_map.json`. On the CLI mirror, handoff pulls before writing the
