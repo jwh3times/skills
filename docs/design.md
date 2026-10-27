@@ -2,8 +2,8 @@
 
 Status: decided 2026-10-26 (see Decisions); pilot step 1 done; `end-session`, `handoff`, `lets-go`,
 `ship` and `docs-updater` written, carrying ApexRacers' fixes through #456, and installed in this
-repository and in ApexRacers (pilot step 2, apexracers#458, 2026-10-27); causet and the other
-consumers wait for the user's go-ahead.
+repository and in ApexRacers (pilot step 2, apexracers#458, 2026-10-27); causet's install is in
+review (causet#342); the other consumers wait for the user's go-ahead.
 
 ## Goal
 
@@ -146,9 +146,10 @@ docs-updater.
 ### `docs/agents/releases.md` — new everywhere except MA (VA's `ci-and-release.md` overlaps)
 
 As built (`settings/releases.md`, 2026-10-27): `Scheme` is a step setting with three
-implementations in the `ship` body — `per-merge` (AR, CH, GT, HV, MA, VA), `cut-on-line` (LB),
-`none` (NC, PG) — and `Skipped tags` (`backfill` for CH, GT, HV, MA, VA; `roll up` for AR, with an
-**Ignore** list for legacy tags) carries the fourth. Extra headings and footer links are not
+implementations in the `ship` body — `per-merge` (AR, CH, GT, HV, MA, VA), `cut-on-line` (LB,
+whose workflow tags each merge; CA, whose maintainer tags releases by hand), `none` (NC, PG) — and
+`Skipped tags` (`backfill` for CH, GT, HV, MA, VA; `roll up` for AR, with an **Ignore** list for
+legacy tags) carries the fourth. Extra headings and footer links are not
 settings: `ship` uses the headings the file already has and keeps an existing link footer in its
 own pattern. The bump always sets an exact `x.y.0` computed from the `origin/main` baseline (VA), so
 a re-run cannot advance twice; HV's and MA's relative `npm version minor|major` become that.
@@ -432,7 +433,16 @@ installed into a scratch project on Fedora (`gh` authenticated).
      `Doc map`. Hence docs-updater's wider rename search, and wiki fixes only after the merge.
    - AR's third-party `wizard` skill named `human-actions.md`; it was edited by hand, so the next
      `mattpocock/skills` install of it will undo that line.
-   CA is next.
+   CA's install is in review (causet#342). What it found:
+   - CA's lock lists `mattpocock/skills` skills beside the shared ones. Hence docs-updater skips
+     every installed skill's body, and `Doc map` discovery proposes those folders as `frozen`.
+   - CA's `Doc map` includes its public wiki's usage pages, so docs-updater's after-the-merge wiki
+     search covers a `Doc map` wiki as well as the `Follow-up wiki`.
+   - CA cuts releases by hand and a maintainer tags them, so `cut-on-line` no longer assumes a
+     workflow tags each merge.
+   - CA's follow-up policy carried points the shared `## Procedure` lacked (the responsible role,
+     a decision's options, acceptance criteria and evidence, push before publication, no close on
+     merge, no advisory publication); the Procedure now has them.
 3. ~~If updates flow, do `ship` and `releases.md`/`ship.md`.~~ Written early, 2026-10-27, by the
    user's choice, so the pilot can install all four skills. (`handoff`/`lets-go` and the machine
    config were written early, 2026-10-26, so this repository could hand off between machines.)
