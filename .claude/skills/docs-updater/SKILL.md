@@ -53,7 +53,9 @@ the `Doc map` can be extended. A pure refactor often owes no doc edit; say so ra
 one. For a list of changes, match the same way. For a full audit, every item is in scope.
 
 Then search for the names the diff removed or renamed (settings, commands, files, flags, counts
-such as "all four"): stale references to them are drift that no **when** predicts. Search wider
+such as "all four"): stale references to them are drift that no **when** predicts. For a member the
+diff adds to an enumerated set (a marker, a setting, a skill), search for its siblings instead: a
+list that names them but not the new one is now incomplete. Search wider
 than the `Doc map`, skipping generated copies and `frozen` documents:
 
 - every tracked Markdown file (`git ls-files '*.md'`);

@@ -1,9 +1,9 @@
 # Shared skills: design
 
 Status: decided 2026-10-26 (see Decisions); pilot step 1 done; `end-session`, `handoff`, `lets-go`,
-`ship` and `docs-updater` written and installed only in this repository, carrying ApexRacers' fixes
-through #456. Pilot step 2 is done in ApexRacers (apexracers#458, 2026-10-27); causet and the
-other consumers wait for the user's go-ahead.
+`ship` and `docs-updater` written, carrying ApexRacers' fixes through #456, and installed in this
+repository and in ApexRacers (pilot step 2, apexracers#458, 2026-10-27); causet and the other
+consumers wait for the user's go-ahead.
 
 ## Goal
 
@@ -172,8 +172,9 @@ a re-run cannot advance twice; HV's and MA's relative `npm version minor|major` 
 As built (2026-10-27, the user's choice): one `Doc map` replaces both `Docs refresh` and `Session
 doc routing`. Each document carries what it owns, **when** to update it (the change kinds and paths
 that AR's, GT's and NC's trigger matrices list, turned around per document) and an optional marker:
-`frozen`, `append-only`, `amend-only`, `owner-only` (NC's `LICENSE`, open product questions) or
-`ship-owned` (the changelog's sections and the version file). A **Never in public docs** list holds
+`frozen`, `append-only`, `amend-only`, `owner-only` (NC's `LICENSE`, open product questions),
+`ship-owned` (the changelog's sections and the version file) or `pinned` (a document another check
+fingerprints, such as AR's hash-pinned privacy matrix source). A **Never in public docs** list holds
 NC's and GT's private content kinds. `Drift probes` holds each agent file's "how to detect drift";
 `Docs validation` is read by docs-updater too. `ship` always runs `docs-updater`, so PG's inline
 list becomes its `Doc map`. `Generated-config check` (workspace) gains the regenerate command.
