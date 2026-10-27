@@ -127,9 +127,10 @@ step on or off), **step** (selects one of several implementations), **hook** (re
 | Board fields and values | AR Status (Todo/In Progress/Blocked/Parked/Done) + Blocked by; HV `Deferred` for Parked; CH, CA Status/Gate/Area; GT Status/Blocked By/Chain/Order/Gate/ADR/Triage; LB Track/Gate; MA Phase/Priority/Size/Status (auto-adds public issues); NC Status/Stage/Gate; VA Status/Gate/Area/Next Action/Blocking Item |
 | Security findings | draft repository advisory (AR — plus a draft board item — CH, CA, HV); private issue labelled `security` (LB); private doc (GT `security-limitations.md`, MA README register, VA tracker + wiki); `SECURITY.md` (PG) |
 
-Labels stay in `triage-labels.md`. Extras beyond the five canonical labels: CA
-`human-action-required`; LB `blocked-by-human`, `security`, `product-decision`; NC
-`bug`/`enhancement`/`documentation`. CH has no `triage-labels.md`.
+Labels stay in `triage-labels.md`, or in `issue-tracker.md`'s own section where a repository keeps
+them there (CH). Extras beyond the five canonical labels: CA `human-action-required`; LB
+`blocked-by-human`, `security`, `product-decision`; NC `bug`/`enhancement`/`documentation`. CH has
+no `triage-labels.md`.
 
 ### `docs/agents/human-follow-up.md` — exists under four names; normalize
 
