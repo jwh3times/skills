@@ -44,7 +44,9 @@ git diff --name-status "$range"
 ```
 
 Read the diff itself, not only the file list. Skip generated copies (the mirrors the
-`Generated-config check` regenerates) and read their sources instead. Match each change against
+`Generated-config check` regenerates) and read their sources instead. Skip the bodies of installed
+skills too (every skill `skills-lock.json` lists): read only what their change means for claims in
+other documents, such as a renamed setting or a new command. Match each change against
 every `Doc map` item's **when**: the paths it names, and the kind of change (a new endpoint, a
 changed command, a new setting, a removed feature). A **when** is a signal, not a limit: a change
 that plainly affects a document it does not match is in scope too, and is named in the report so
@@ -60,11 +62,11 @@ wider than the `Doc map`, skipping generated copies and `frozen` documents:
 
 - every tracked Markdown file (`git ls-files '*.md'`);
 - the companion, from its own root, when its checkout exists;
-- the `Follow-up wiki`, when one is set and the change is on the default branch, in a read-only
-  clone in a scratch location.
+- each wiki: the `Follow-up wiki`, and any `Doc map` item that lives in a wiki, when the change is
+  on the default branch, in a read-only clone in a scratch location.
 
 A hit in a document the `Doc map` lacks is fixed like any other and named in the report, so the map
-can be extended. The wiki waits for the merge, so its pages never point at a file that is not there
+can be extended. A wiki waits for the merge, so its pages never point at a file that is not there
 yet: a run on an unmerged branch (every run from `ship`) skips it and reports that the wiki search
 is owed after the merge. The next `end-session`, or any run on the default branch, performs it and
 fixes what it finds.
