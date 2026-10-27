@@ -23,8 +23,9 @@ runs the full test suites: CI owns them, and running them here makes the skill s
 ## 0. Settings
 
 This skill reads `docs/agents/workspace.md`, `docs/agents/issue-tracker.md`,
-`docs/agents/human-follow-up.md`, `docs/agents/releases.md` and `docs/agents/ship.md`. Follow `.agents/skills/ship/settings/README.md` to read them and complete any
-that are missing; the definitions sit beside it. Resolve each `discover:` value once, here, and
+`docs/agents/human-follow-up.md`, `docs/agents/releases.md` and `docs/agents/ship.md`. Follow
+`.agents/skills/ship/settings/README.md` to read them and complete any that are missing; the
+definitions sit beside it. Resolve each `discover:` value once, here, and
 reuse it below.
 
 With `Scheme: none`, skip every step marked **(release)**.
@@ -174,8 +175,9 @@ show the diff and ask first. Run its **Before committing** checks either way.
 
 Run the `## Procedure` in `.agents/skills/ship/settings/human-follow-up.md` for every required human
 action this branch leaves, before the PR opens, including those `docs-updater` returned. Reconcile
-rather than duplicate; on a re-ship, reuse the records already made. A follow-up never lives only in the changelog or the PR body. Its links go in the report and
-private records, never in the public PR.
+rather than duplicate; on a re-ship, reuse the records already made. A follow-up never lives only
+in the changelog or the PR body. Its links go in the report and private records, never in the
+public PR.
 
 ## 7. Write the changelog (release)
 

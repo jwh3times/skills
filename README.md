@@ -10,7 +10,7 @@ identical in every repository; what is specific to a repository lives in that re
 | `handoff` | Hands the session to another machine through the Handoffs folder, then runs `end-session`. |
 | `lets-go` | Resumes the active handoff on the other machine. Needs `handoff` installed beside it. |
 | `ship` | Takes a finished branch to an open PR: release level, docs, changelog, human follow-ups, fast checks. |
-| `docs-updater` | Finds where the docs and the code disagree and fixes the docs, or reports it in `check` mode. `ship` and `end-session` run it. |
+| `docs-updater` | Finds where the docs and the code disagree and fixes the docs, or reports it in `check` mode. `ship` and `end-session` run it, so install it beside them. |
 
 ## Install, and later update
 

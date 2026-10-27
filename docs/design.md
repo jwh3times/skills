@@ -98,7 +98,7 @@ caitlyn-holland-vip, GT guardiantracker, HV holland-vip, LB leasebook, MA magic-
 PG PressGolf, VA valleys-at-ashebrook-hoa. Kind: **value** (command, path, name), **toggle** (a shared
 step on or off), **step** (selects one of several implementations), **hook** (repo-only steps).
 
-### `docs/agents/workspace.md` — new; read by all four skills
+### `docs/agents/workspace.md` — new; read by every skill
 
 | Setting | Found | Kind |
 | --- | --- | --- |
@@ -179,7 +179,7 @@ list becomes its `Doc map`. `Generated-config check` (workspace) gains the regen
 
 | Setting | Found |
 | --- | --- |
-| Refresh method (built as `Docs refresh`) | `docs-updater` agent (AR, CH, GT, HV, LB, MA, VA; NC reads the agent file when no agent harness exists); `docs-updater` skill (CA); inline doc list (PG) |
+| Refresh method (built as `Docs refresh`; no longer a setting) | `docs-updater` agent (AR, CH, GT, HV, LB, MA, VA; NC reads the agent file when no agent harness exists); `docs-updater` skill (CA); inline doc list (PG) |
 | Docs owned | per-repo list given to the refresher |
 | Changelog owner during ship | ship (AR, HV, LB declare it); GT, MA, VA's agent claims it, so ship must say to leave it alone |
 | Private-doc routing (end-session) | file → when to update; frozen files (AR `archive.md`, LB design history, VA session history); append-only folders (AR captured API responses); amend-only dated docs (MA) |
@@ -257,14 +257,14 @@ the best version, which keeps the catalog above short.
 - CH's backfill detection (normalized `comm` plus bot attribution) and its own-section detection
   (`git diff origin/main...HEAD -- CHANGELOG.md | grep '^+## \['`).
 - Format before regenerating generated config (HV, MA).
-- Fallbacks when `docs-updater` or `gh` is unavailable (NC, CH).
+- Fallback when `gh` is unavailable (CH).
 - Fast checks run every `Fast checks` entry, and a red one refuses the push; a failure's fix
   command, when the entry names one, is offered in the report (AR #455). After a fix that writes,
   the list runs again from the top (HV, MA: mirrors are generated from formatted sources).
 - Wait for the tag of a just-merged PR before computing the next version (HV); name another open PR
   whose changelog claims the same version (MA).
 - Up to date with `origin/main` before shipping, offering a merge (NC).
-- Run the docs agent's definition inline where the harness cannot dispatch it (NC).
+- Follow the `docs-updater` skill inline where the harness has no subagent (NC).
 - Human follow-ups before the PR (Decision 3), their links never in the public body (Decision 2).
 - The issue link line, when `Issue link` is set (AR #456): take `N` from the branch per its
   pattern and read the issue (`gh issue view <N> --json title,labels,body`); open the body with
@@ -416,7 +416,7 @@ installed into a scratch project on Fedora (`gh` authenticated).
    repository.~~ Done 2026-10-26; see Verified.
 2. Pilot `end-session`: write its generic body with step 0 and hooks; fill `workspace.md`,
    `issue-tracker.md`, `human-follow-up.md` and `docs.md` for AR (squash) and CA (merge commits, no
-   companion); install into both.
+   companion); install into both, with `docs-updater`, which its docs step runs.
 3. ~~If updates flow, do `ship` and `releases.md`/`ship.md`.~~ Written early, 2026-10-27, by the
    user's choice, so the pilot can install all four skills. (`handoff`/`lets-go` and the machine
    config were written early, 2026-10-26, so this repository could hand off between machines.)

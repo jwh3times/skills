@@ -31,8 +31,9 @@ Take both from the arguments or the caller's instructions:
   `Doc map` item.
 
 A caller may add constraints; follow them. From `ship`: the branch is not merged, so leave
-`ship-owned` documents alone and make no claim that the work shipped — no roadmap, archive, status
-or board change. From `end-session`: the session's work, merged or not, as it says.
+`ship-owned` documents alone and make no claim that the work shipped — no roadmap, archive, release
+or merge status, or board change. Describing what the branch implements is still in scope. From
+`end-session`: the session's work, merged or not, as it says.
 
 ## 2. Find the documents in scope
 
@@ -43,10 +44,17 @@ git diff --stat "$range"
 git diff --name-status "$range"
 ```
 
-Read the diff itself, not only the file list. Match each change against every `Doc map` item's
-**when**: the paths it names, and the kind of change (a new endpoint, a changed command, a new
-setting, a removed feature). A pure refactor often owes no doc edit; say so rather than inventing
+Read the diff itself, not only the file list. Skip generated copies (the mirrors the
+`Generated-config check` regenerates) and read their sources instead. Match each change against
+every `Doc map` item's **when**: the paths it names, and the kind of change (a new endpoint, a
+changed command, a new setting, a removed feature). A **when** is a signal, not a limit: a change
+that plainly affects a document it does not match is in scope too, and is named in the report so
+the `Doc map` can be extended. A pure refactor often owes no doc edit; say so rather than inventing
 one. For a list of changes, match the same way. For a full audit, every item is in scope.
+
+Then search every `Doc map` document for the names the diff removed or renamed (settings, commands,
+files, flags, counts such as "all four"): stale references to them are drift that no **when**
+predicts.
 
 ## 3. Check each document against the code
 
@@ -79,8 +87,9 @@ Write so the next reader trusts the docs:
   status, next steps, to-dos — lives in issues, not Markdown: a doc may state the resulting contract
   ("the secret is in the vault"), never the pending action.
 - **The rule that survives.** History belongs in the changelog and ADRs; a doc records the current
-  rule and may cite the issue that set it. Remove a known limitation only when the code shows it
-  fixed.
+  rule and may cite the issue that set it. In a document that mixes the two (a survey beside the
+  design built from it), update the current-state claims and leave dated findings as written.
+  Remove a known limitation only when the code shows it fixed.
 - **Decisions and vocabulary.** Never edit an accepted ADR to match the code; report the
   contradiction. When a glossary (`CONTEXT.md`) defines a term, point at it rather than restating
   the definition, and do not rename code to match new vocabulary.
@@ -98,15 +107,15 @@ or the user does when the skill ran on its own.
 ## 5. Human actions
 
 List every required human action the change leaves (access setup, a dashboard change, credentials,
-a manual check). Run from `ship` or `end-session`, return the list to the caller, which runs the
-follow-up procedure once for all of it. Run on its own, run the `## Procedure` in
-`.agents/skills/docs-updater/settings/human-follow-up.md` yourself. Either way, a follow-up never
-lives only in a doc.
+a manual check), or say that there are none. Run from `ship` or `end-session`, return the list to
+the caller, which runs the follow-up procedure once for all of it. Run on its own, run the
+`## Procedure` in `.agents/skills/docs-updater/settings/human-follow-up.md` yourself. Either way, a
+follow-up never lives only in a doc.
 
 ## 6. Validate
 
-- `Docs validation`, each command from its folder.
-- `Generated-config check` when an agent or skill source changed.
+- `Docs validation`, each command from its folder (the repository root when none is named).
+- `Generated-config check`, when its setting says to run it.
 - `git diff --check` for whitespace errors.
 - Links and anchors in every edited document resolve: relative paths exist, and `#anchors` match a
   heading in their target.
@@ -116,13 +125,14 @@ failure; report it.
 
 ## 7. Report
 
-Report private-content leaks first, in either mode. Then, one line per document:
+Report private-content leaks first, in either mode. Then, one line per document, labelled in plain
+text:
 
-- ✅ **current** — checked against the code, no change needed;
-- ✏️ **changed** — what changed (fix mode);
-- ⚠️ **drift** — what disagrees and with which source: left unfixed in check mode, or not resolvable
+- **current** — checked against the code, no change needed;
+- **changed** — what changed (fix mode);
+- **drift** — what disagrees and with which source: left unfixed in check mode, or not resolvable
   from the code alone (a feature disabled or removed?), or in an `owner-only` or `frozen` document.
 
-Then the human actions found (and, run on its own, their follow-up links or the publication
-blocker), validation results, companion checks that could not run, and that the edits are
-uncommitted.
+Then the changes no `Doc map` item's **when** matched, the human actions found (and, run on its
+own, their follow-up links or the publication blocker), validation results, companion checks that
+could not run, and that the edits are uncommitted.
