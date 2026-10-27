@@ -125,6 +125,7 @@ step on or off), **step** (selects one of several implementations), **hook** (re
 | Private issue repo | named in the public tree (AR, HV, VA); discovered from the checkout (LB, NC, GT, MA, CH); none (CA, PG) |
 | Board | owner `jwh3times`, one project per repository except PG; its number is a per-repo setting |
 | Board fields and values | AR Status (Todo/In Progress/Blocked/Parked/Done) + Blocked by; HV `Deferred` for Parked; CH, CA Status/Gate/Area; GT Status/Blocked By/Chain/Order/Gate/ADR/Triage; LB Track/Gate; MA Phase/Priority/Size/Status (auto-adds public issues); NC Status/Stage/Gate; VA Status/Gate/Area/Next Action/Blocking Item |
+| New work | an issue (the shared `end-session`'s behavior before this setting); a board draft item until the work is committed to (GT, ADR 0024) |
 | Security findings | draft repository advisory (AR — plus a draft board item — CH, CA, HV); private issue labelled `security` (LB); private doc (GT `security-limitations.md`, MA README register, VA tracker + wiki); `SECURITY.md` (PG) |
 
 Labels stay in `triage-labels.md`, or in `issue-tracker.md`'s own section where a repository keeps

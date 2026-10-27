@@ -16,6 +16,10 @@ none
 
 none
 
+## New work
+
+issue
+
 ## Security findings
 
 A draft repository advisory in jwh3times/skills. Never a public issue.
