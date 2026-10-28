@@ -2,8 +2,8 @@
 
 Status: decided 2026-10-26 (see Decisions); pilot step 1 done; `end-session`, `handoff`, `lets-go`,
 `ship` and `docs-updater` written, carrying ApexRacers' fixes through #456, and installed in this
-repository and in ApexRacers (pilot step 2, apexracers#458, 2026-10-27); causet's install is in
-review (causet#342); caitlyn-holland-vip's install is in review (caitlyn-holland-vip#242); the other
+repository and in ApexRacers (pilot step 2, apexracers#458, 2026-10-27), then in causet (#342),
+caitlyn-holland-vip (#242), holland-vip (#214) and GuardianTracker (#440), all 2026-10-27; the other
 consumers wait for the user's go-ahead.
 
 ## Goal
@@ -405,16 +405,19 @@ installed into a scratch project on Fedora (`gh` authenticated).
 
 - ~~AR `ship` never runs `sync:agents:check`, though Agent Config Sync is a required check
   there.~~ Fixed in AR #455; the shared `Fast checks` setting must cover required checks.
-- CH, HV and VA's `skills-lock.json` record `handoff` as `mattpocock/skills`; the content is the
-  user's. `skills update` could overwrite it. (CH and VA store the same hash for different files.)
+- VA's `skills-lock.json` records `handoff` as `mattpocock/skills`; the content is the user's.
+  `skills update` could overwrite it. (CH and HV did too, until their installs recorded the shared
+  `handoff`.)
 - No repository locks `handoff_map.json`. On the CLI mirror, handoff pulls before writing the
   document and pushes the whole map after `set`; lets-go has the same pull → clear → push window. A
   concurrent session lost an apexracers clear on 2026-10-26.
 - MA's map script hardcodes the Proton account and `My Files` casing.
 - `sync-agents.mjs` (shared verbatim by all 10) writes its banner into the authored skill when
   `skills update` has left `.claude/skills/<name>` as a symlink; see Verified.
-- GT `end-session` says nothing in `private/` can reach a commit; `private/` is its own repository.
-- GT `end-session` fences POSIX commands as `powershell`; AR `end-session` says Git Bash on Linux.
+- ~~GT `end-session` says nothing in `private/` can reach a commit; `private/` is its own
+  repository.~~ Moot: GT#440 replaced it with the shared skill.
+- ~~GT `end-session` fences POSIX commands as `powershell`; AR `end-session` says Git Bash on
+  Linux.~~ Moot: GT#440 and AR#458 replaced both with the shared skill.
 
 ## Pilot plan
 
@@ -462,6 +465,29 @@ installed into a scratch project on Fedora (`gh` authenticated).
    - CA's follow-up policy carried points the shared `## Procedure` lacked (the responsible role,
      a decision's options, acceptance criteria and evidence, push before publication, no close on
      merge, no advisory publication); the Procedure now has them.
+   What HV found (holland-vip#214):
+   - HV's forked `ask-matt` also routed `/handoff` as `mattpocock/skills`' portable-file handoff,
+     confirming the router check CH prompted.
+   - HV names its private repository and board in its public files, so its settings write them
+     literally; `discover:` is for repositories that keep them out.
+   - HV's companion commit policy is `ask`: docs-updater's companion edit waited for the user's
+     word. Its `gitleaks` pre-commit hook was absent on the Fedora machine, where the scan ran from
+     the pinned `zricethezav/gitleaks` container instead.
+   What GT found (GuardianTracker#440):
+   - GT's ADR 0024 keeps work nobody has committed to as a board draft item, which `end-session`
+     could not honor: it always opened an issue. Hence the `New work` setting (#10).
+   - GT archives its 0.x–1.1 changelog lines in `docs/changelog/`, so the shared backfill, which
+     reads `CHANGELOG.md` alone, saw 107 released versions as missing. `Skipped tags` **Ignore**
+     covers archived lines.
+   - GT's board `Status` has no blocked option: a `Blocked By` text field carries blockers, cleared
+     after merges by `npm run board:blockers`. `Board fields` holds that as written.
+   - GT's Format Check policy tests were one `node --test` list copied in CI and AGENTS.md; a root
+     `test:policy` script now holds it, and the `Fast checks` call that.
+   - GT's vendored `wizard` linked the renamed follow-up file; its link was fixed by hand, which a
+     `mattpocock/skills` update will undo, as at AR.
+   - `lint-agent-neutrality.mjs` lints the repository it lives in, not the working directory, so
+     running this repository's copy against a consumer checked the wrong tree. It now takes an
+     optional root and names the root it linted.
 3. ~~If updates flow, do `ship` and `releases.md`/`ship.md`.~~ Written early, 2026-10-27, by the
    user's choice, so the pilot can install all four skills. (`handoff`/`lets-go` and the machine
    config were written early, 2026-10-26, so this repository could hand off between machines.)
