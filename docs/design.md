@@ -4,8 +4,8 @@ Status: decided 2026-10-26 (see Decisions); pilot step 1 done; `end-session`, `h
 `ship` and `docs-updater` written, carrying ApexRacers' fixes through #456, and installed in this
 repository and in ApexRacers (pilot step 2, apexracers#458, 2026-10-27), then in causet (#342),
 caitlyn-holland-vip (#242), holland-vip (#214) and GuardianTracker (#440), all 2026-10-27, and
-PressGolf (#182), Nearcited (#237), LeaseBook (#637) and magic-agenda (#556), 2026-10-27/28;
-valleys-at-ashebrook-hoa waits for the user's go-ahead.
+PressGolf (#182), Nearcited (#237), LeaseBook (#637), magic-agenda (#556) and
+valleys-at-ashebrook-hoa (#477), 2026-10-27/28: every consumer.
 
 ## Goal
 
@@ -108,7 +108,7 @@ step on or off), **step** (selects one of several implementations), **hook** (re
 | Merge style | squash: AR, LB. Merge commits: the other 8 (measured from the last 5 merged PRs). Not a setting after all: end-session's one PR-based branch rule serves both (see Fixed in the skill body) | — |
 | Private companion | none (CA, PG) or `private/`; repo named in the file (AR, HV, VA) or discovered from the checkout (LB, NC, GT, MA, CH — deliberately keeps the locator out of the public tree) | value |
 | Companion status command | `node scripts/repository-status.mjs --check-private` (AR), `git -C private status` (others) | value |
-| Companion commit/push policy | report and ask (AR), leave to `/ship` (CH), never without authorization (HV), expected (LB, NC, VA), gated: diff review + value scan + visibility check + approval (MA) | step |
+| Companion commit/push policy | report and ask (AR), leave to `/ship` (CH), never without authorization (HV), expected (LB, NC, VA — `commit` with a staged-diff check), gated: diff review + value scan + visibility check + approval (MA) | step |
 | Companion bootstrap | `npm run bootstrap:private` (MA, NC, VA) | value |
 | Sync with `main` | `npm run sync:main` (AR, CH, HV, LB, VA — LB's fast-forwards `private/` too), plain fast-forward (PG), `cst pull --ff-only` (CA) | value |
 | After-sync setup | NC: `pnpm install`, `pnpm local:env`, `pnpm check` | hook |
@@ -165,7 +165,7 @@ a re-run cannot advance twice; HV's and MA's relative `npm version minor|major` 
 | Bump command | `npm version <x.y.0> --no-git-tag-version` (AR), `npm version <floor>` (CH), `npm version minor\|major` (HV, MA), `npm version <exact> --allow-same-version` (VA), edit `VERSION` (GT, LB) |
 | Ask before bumping | always (HV, LB, MA), only when ambiguous (AR, CH, GT, VA) |
 | Next-version command | `bash scripts/next-version.sh` (AR, CH, GT, VA), `node scripts/next-version.mjs` (HV, MA), computed in `version.yml` (LB) |
-| Legacy tags to ignore | `v1.0.0.x` (CH, HV), `v1.1.1.x` (MA) |
+| Legacy tags to ignore | `v1.0.0.x` (CH, HV), `v1.1.1.x` (MA), `v0.1.0.x` and `v0.1.1`–`v0.1.6`, released before the changelog kept a section per build (VA) |
 | Unreleased placeholder | `No unreleased changes.` (AR, CH, GT, HV, MA), empty (VA), `- _Nothing yet._` (LB) |
 | Extra headings | `Deprecated` (LB); `Internal`, `Docs` (MA) |
 | Footer links | compare (AR, GT, MA, VA), release tag on cut (LB), none (CH, HV) |
@@ -393,12 +393,13 @@ installed into a scratch project on Fedora (`gh` authenticated).
   `docs/agents/docs.md` and fails when the map is missing.
 - MA and VA keep area guides in `docs/agents/`, beside the settings files. Check their names
   against the settings topics (`docs`, `releases`, `ship`, `workspace`, `handoffs`,
-  `issue-tracker`, `human-follow-up`) at their install. MA's (`boards.md`, `labels.md` and the like)
-  name app areas and clashed with none (MA#556).
+  `issue-tracker`, `human-follow-up`) at their install. Neither clashed: MA's (`boards.md`,
+  `labels.md` and the like) and VA's (`data-model.md`, `migrations.md` and the like) name app areas
+  (MA#556, VA#477).
 
-- VA `ship` edits the PR body to link the private follow-up issue and wiki page, against Decision 2.
-  The shared body keeps those links in the report; VA's `dev-flow.md` or follow-up doc changes at
-  its install.
+- ~~VA `ship` edits the PR body to link the private follow-up issue and wiki page, against Decision
+  2.~~ Fixed in VA#477: its follow-up rules, `AGENTS.md` and `code-reviewer` keep the links in the
+  closing report.
 - ~~MA's `dev-flow.md` says a `Mints **vX.Y.Z**.` line follows the link line, but its `ship` never
   writes it.~~ Fixed in MA#556: its `dev-flow.md` now describes the `Release level:` line and the
   version the shared body writes beside it.
@@ -408,9 +409,8 @@ installed into a scratch project on Fedora (`gh` authenticated).
 
 - ~~AR `ship` never runs `sync:agents:check`, though Agent Config Sync is a required check
   there.~~ Fixed in AR #455; the shared `Fast checks` setting must cover required checks.
-- VA's `skills-lock.json` records `handoff` as `mattpocock/skills`; the content is the user's.
-  `skills update` could overwrite it. (CH and HV did too, until their installs recorded the shared
-  `handoff`.)
+- ~~VA's `skills-lock.json` records `handoff` as `mattpocock/skills`; the content is the user's.~~
+  Fixed in VA#477, which recorded the shared `handoff`, as CH's and HV's installs did.
 - No repository locks `handoff_map.json`. On the CLI mirror, handoff pulls before writing the
   document and pushes the whole map after `set`; lets-go has the same pull → clear → push window. A
   concurrent session lost an apexracers clear on 2026-10-26.
@@ -548,6 +548,24 @@ installed into a scratch project on Fedora (`gh` authenticated).
    - MA's private wiki had a Fedora handoff runbook built on an exported `HANDOFFS_DIR` and the old
      `scripts/handoff-map.mjs`, as HV's did. Each repository with such a page needs it rewritten for
      the machine config after its install.
+   What VA found (valleys-at-ashebrook-hoa#477):
+   - VA's Prettier formats `.agents/skills/` (it ignores only the generated trees), so it failed 31
+     installed files. Its `.prettierignore` lists the five shared skills and the lint pair; running
+     `npm run format` on them instead would fork them from upstream. Check each consumer's
+     formatter for `.agents/skills/` coverage at its install.
+   - VA's type-aware oxlint rejected the lint script's bare `.sort()`
+     (`typescript/require-array-sort-compare`). #14 gave it an explicit code-unit comparator, so VA
+     carries no override; the other nine take it at their next refresh. Its test file joined VA's
+     existing `no-floating-promises` override for `sync-agents.test.mjs`.
+   - VA's old `ship` linked the private follow-up issue and wiki page from the PR body, and
+     `code-reviewer` required those links. Both now keep them in the closing report (Decision 2),
+     and the rules moved to `human-follow-up.md`, with VA's contact-value scan before a wiki push in
+     `Follow-up wiki`. The `issue-tracker.md` heading stays as a pointer for older links.
+   - Six early releases (`v0.1.1`–`v0.1.6`) have no changelog section, beside the 4-part `v0.1.0.x`
+     tags. Both are **Ignore** entries, so backfill does not invent them, as GT's archived lines
+     needed. Compare tags against `CHANGELOG.md` before proposing `Skipped tags`.
+   - VA records agent tooling in ADRs, so the switch got ADR 0029, with an update note on ADR 0021,
+     whose "format before sync" no longer covers the installed skills.
 3. ~~If updates flow, do `ship` and `releases.md`/`ship.md`.~~ Written early, 2026-10-27, by the
    user's choice, so the pilot can install all four skills. (`handoff`/`lets-go` and the machine
    config were written early, 2026-10-26, so this repository could hand off between machines.)
