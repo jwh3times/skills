@@ -174,8 +174,8 @@ a re-run cannot advance twice; HV's and MA's relative `npm version minor|major` 
 
 ### `docs/agents/docs.md` — new
 
-As built (2026-10-27, the user's choice): one `Doc map` replaces both `Docs refresh` and `Session
-doc routing`. Each document carries what it owns, **when** to update it (the change kinds and paths
+As built (2026-10-27, the user's choice): one `Doc map` replaces both `Docs refresh` and
+`Session doc routing`. Each document carries what it owns, **when** to update it (the change kinds and paths
 that AR's, GT's and NC's trigger matrices list, turned around per document) and an optional marker:
 `frozen`, `append-only`, `amend-only`, `owner-only` (NC's `LICENSE`, open product questions),
 `ship-owned` (the changelog's sections and the version file) or `pinned` (a document another check
