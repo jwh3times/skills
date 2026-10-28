@@ -3,8 +3,9 @@
 Status: decided 2026-10-26 (see Decisions); pilot step 1 done; `end-session`, `handoff`, `lets-go`,
 `ship` and `docs-updater` written, carrying ApexRacers' fixes through #456, and installed in this
 repository and in ApexRacers (pilot step 2, apexracers#458, 2026-10-27), then in causet (#342),
-caitlyn-holland-vip (#242), holland-vip (#214) and GuardianTracker (#440), all 2026-10-27; the other
-consumers wait for the user's go-ahead.
+caitlyn-holland-vip (#242), holland-vip (#214) and GuardianTracker (#440), all 2026-10-27, and
+PressGolf (#182), Nearcited (#237) and LeaseBook (#637), 2026-10-27/28; magic-agenda and
+valleys-at-ashebrook-hoa wait for the user's go-ahead.
 
 ## Goal
 
@@ -109,7 +110,7 @@ step on or off), **step** (selects one of several implementations), **hook** (re
 | Companion status command | `node scripts/repository-status.mjs --check-private` (AR), `git -C private status` (others) | value |
 | Companion commit/push policy | report and ask (AR), leave to `/ship` (CH), never without authorization (HV), expected (LB, NC, VA), gated: diff review + value scan + visibility check + approval (MA) | step |
 | Companion bootstrap | `npm run bootstrap:private` (MA, NC, VA) | value |
-| Sync with `main` | `npm run sync:main` (AR, CH, HV, VA), plain fast-forward (LB, PG), `cst pull --ff-only` (CA) | value |
+| Sync with `main` | `npm run sync:main` (AR, CH, HV, LB, VA — LB's fast-forwards `private/` too), plain fast-forward (PG), `cst pull --ff-only` (CA) | value |
 | After-sync setup | NC: `pnpm install`, `pnpm local:env`, `pnpm check` | hook |
 | Safe-to-remove paths | lists in AR, GT, LB, MA, NC, PG; CH and HV leave artifacts by default | value |
 | Never-remove paths | lists in AR, GT, MA, NC, PG, VA, CA | value |
@@ -124,7 +125,7 @@ step on or off), **step** (selects one of several implementations), **hook** (re
 | Public repo slug | `jwh3times/<name>`; GitHub casing differs from the directory (`GuardianTracker`, `LeaseBook`) |
 | Private issue repo | named in the public tree (AR, HV, VA); discovered from the checkout (LB, NC, GT, MA, CH); none (CA, PG) |
 | Board | owner `jwh3times`, one project per repository except PG; its number is a per-repo setting |
-| Board fields and values | AR Status (Todo/In Progress/Blocked/Parked/Done) + Blocked by; HV `Deferred` for Parked; CH, CA Status/Gate/Area; GT Status/Blocked By/Chain/Order/Gate/ADR/Triage; LB Track/Gate; MA Phase/Priority/Size/Status (auto-adds public issues); NC Status/Stage/Gate; VA Status/Gate/Area/Next Action/Blocking Item |
+| Board fields and values | AR Status (Todo/In Progress/Blocked/Parked/Done) + Blocked by; HV `Deferred` for Parked; CH, CA Status/Gate/Area; GT Status/Blocked By/Chain/Order/Gate/ADR/Triage; LB Track/Gate + a Status its board's workflows set; MA Phase/Priority/Size/Status (auto-adds public issues); NC Status/Stage/Gate; VA Status/Gate/Area/Next Action/Blocking Item |
 | New work | an issue (the shared `end-session`'s behavior before this setting); a board draft item until the work is committed to (GT, ADR 0024) |
 | Security findings | draft repository advisory (AR — plus a draft board item — CH, CA, HV); private issue labelled `security` (LB); private doc (GT `security-limitations.md`, MA README register, VA tracker + wiki); `SECURITY.md` (PG) |
 
@@ -142,7 +143,7 @@ docs-updater.
 | Setting | Found |
 | --- | --- |
 | Issue destination | private companion repo (most), public repo (CA), checkbox in a public tracking issue (NC #17), labelled issue only (PG) |
-| Label | `ready-for-human`, `human-action-required`, `blocked-by-human` |
+| Label | `ready-for-human` (LB adds `blocked-by-human` when other work waits on it), `human-action-required` (CA) |
 | Wiki | private `human-todo` (AR, CH, GT, LB, MA); `Runbook-<slug>` pages (HV); public wiki (CA); `Human-TODO` with a contact-value scan (VA); none (NC, PG) |
 | Wiki push pre-authorized | CH |
 
@@ -189,7 +190,7 @@ list becomes its `Doc map`. `Generated-config check` (workspace) gains the regen
 | Docs owned | per-repo list given to the refresher |
 | Changelog owner during ship | ship (AR, HV, LB declare it); GT, MA, VA's agent claims it, so ship must say to leave it alone |
 | Private-doc routing (end-session) | file → when to update; frozen files (AR `archive.md`, LB design history, VA session history); append-only folders (AR captured API responses); amend-only dated docs (MA) |
-| Docs validation | `npm run test:docs` (CA), `private/scripts/check-docs.mjs` (LB) |
+| Docs validation | `npm run test:docs` (CA); `npm run docs:check` from `web/`, which runs `scripts/check-docs.mjs`, and the companion's `private/scripts/check-docs.mjs` (LB) |
 
 ### `docs/agents/ship.md` — ship-only
 
@@ -386,9 +387,10 @@ installed into a scratch project on Fedora (`gh` authenticated).
 
 ## Found while surveying (fix in the source repos)
 
-- LB's `scripts/check-docs.mjs` parses `.claude/agents/docs-updater.md` for the canonical document
-  list and fails when one is missing. At LB's install, point it at the `Doc map` in
-  `docs/agents/docs.md`.
+- ~~LB's `scripts/check-docs.mjs` parses `.claude/agents/docs-updater.md` for the canonical
+  document list.~~ Fixed in LB#637. It ran that check only when the agent file existed, so removing
+  the file would have switched the check off silently, not failed it. It now reads the `Doc map` in
+  `docs/agents/docs.md` and fails when the map is missing.
 - MA and VA keep area guides in `docs/agents/`, beside the settings files. Check their names
   against the settings topics (`docs`, `releases`, `ship`, `workspace`, `handoffs`,
   `issue-tracker`, `human-follow-up`) at their install.
@@ -439,7 +441,7 @@ installed into a scratch project on Fedora (`gh` authenticated).
      `Doc map`. Hence docs-updater's wider rename search, and wiki fixes only after the merge.
    - AR's third-party `wizard` skill named `human-actions.md`; it was edited by hand, so the next
      `mattpocock/skills` install of it will undo that line.
-   CA's install is in review (causet#342). CH's (caitlyn-holland-vip#242) followed, the first beyond
+   CA's install merged as causet#342. CH's (caitlyn-holland-vip#242) followed, the first beyond
    the pilot pair. What CH found:
    - CH forks its 13 `mattpocock/skills` skills in place (its ADR-0006), so a lock entry does not
      mean frozen. docs-updater skips only the skills the `Doc map` marks `frozen`, and discovery
@@ -488,6 +490,43 @@ installed into a scratch project on Fedora (`gh` authenticated).
    - `lint-agent-neutrality.mjs` lints the repository it lives in, not the working directory, so
      running this repository's copy against a consumer checked the wrong tree. It now takes an
      optional root and names the root it linted.
+   What PG found (PressGolf#182):
+   - PG was the first install with `Scheme: none` and no companion, board or wiki: `ship` skipped
+     its versioning section, and no wiki search was owed after the merge.
+   - Its `SECURITY.md` sends reporters to private vulnerability reporting, which was off. The
+     install filed that as a human follow-up (PG#183), and the user turned it on.
+   - PG's impact flags moved under `Hook: before PR`, and `AGENTS.md` records the switch; PG keeps
+     no ADRs for tooling.
+   What NC found (Nearcited#237):
+   - NC's `ship` checked the diff against a rules table before the docs refresh and fast checks.
+     The table moved verbatim to `docs/agents/ship.md` `## Rule triggers`, run by `Hook: before PR`,
+     which runs after them, so a fix found there means running both again. The user accepted that;
+     a `Hook: before docs` is the remedy if the re-runs get in the way.
+   - NC's `AGENTS.md` and README recommended `npx skills update -p -y`, which Verified rules out.
+     docs-updater replaced it with the install command; check each repository's docs for it.
+   - Biome failed the lint's test file on line width and quotes, so `biome.json` excludes
+     `scripts/lint-agent-neutrality*.mjs` beside its `sync-agents` line. Each consumer's formatter
+     needs the lint scripts and the installed skills ignored (CH's and LB's Prettier, LB's cspell).
+   - NC's owner-only `THIRD_PARTY_NOTICES.md` said every skill came from `mattpocock/skills`. With
+     approval it gained one sentence naming the shared five, and its `Doc map` entry now fires
+     when a skill is replaced. NC's vendored `ask-matt` routed `/handoff` too; `dev-flow.md` routes
+     around it rather than editing the vendored skill.
+   What LB found (LeaseBook#637):
+   - LB's `check-docs.mjs` silently skipped its `Doc map` coverage without the agent file (see
+     Found while surveying). It now fails closed.
+   - LB treats every file under `docs/` as a living document: four metadata lines and a
+     `Last reviewed` date that CI fails a day after the commit. The skills edit their settings
+     files (step 0, docs-updater) without bumping that date, so `check-docs.mjs` exempts the seven
+     settings topics from the metadata and freshness rules, while still scanning them for authority
+     claims. A consumer with a document-lifecycle rule needs the same exemption.
+   - LB commits the public change first and records its PR or SHA on the private follow-up before
+     committing the companion; the shared `ship` would commit companion edits before the PR exists.
+     LB's `Companion commit policy` is `ask`.
+   - LB's human-action rules moved to `human-follow-up.md`; the `## Required human-action handoff`
+     heading in `issue-tracker.md` stays as a pointer, so the anchors `AGENTS.md` and `wizard` link
+     to still resolve.
+   - LB's `check-docs.mjs` rejects some commands in `docs/agents/` (`npm run typecheck`), so its
+     `Fast checks` call `npm run build`, which runs `tsc -b`.
 3. ~~If updates flow, do `ship` and `releases.md`/`ship.md`.~~ Written early, 2026-10-27, by the
    user's choice, so the pilot can install all four skills. (`handoff`/`lets-go` and the machine
    config were written early, 2026-10-26, so this repository could hand off between machines.)
