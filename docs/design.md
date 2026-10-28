@@ -338,6 +338,30 @@ per-project install and the shared scripts are recorded under Architecture.
 8. **Deferred:** converging release schemes (a `releases.md` setting until `ship` is ported) and
    pruning overlapping third-party skills (a consumer-repo question, not this repository's).
 
+## Convergence
+
+Every install kept the repository's existing habits, so the settings files (330–630 lines each)
+carried variety nobody had chosen. A survey on 2026-10-28 compared four settings across the ten
+consumers, and the user chose to converge the repositories rather than the skills:
+
+- **Defaults.** A definition may carry a **Default** line: a missing heading takes it without being
+  asked for, and a repository writes the heading only to override it. `Release commit message`
+  defaults by `Scheme` (`docs: update docs and changelog for v<version>` for `per-merge`, the
+  dominant form; LB's two `cut-on-line` forms; PG's `docs: update docs for <summary>` for `none`);
+  NC keeps an override, since its commits carry no type prefix. `Unreleased placeholder` defaults
+  to `No unreleased changes.`, the form five repositories used; CA, VA and LB adopt it.
+- **Follow-up wiki pages.** New pages are named `<Topic>-<YYYY-MM-DD>`, indexed from `human-todo`
+  where a wiki has no index yet. Existing pages keep their names: issues link to them, and a wiki
+  rename breaks every such link.
+- **Fast checks.** The commands are each toolchain's own; what converges is the rule. Fast checks
+  are the static gates plus each unit suite that finishes in about two minutes, run when its paths
+  changed; slower suites stay in CI and are named. Six repositories ran no unit suite locally,
+  against the old wording ("every required check that can run locally"), which none of them could
+  meet without slowing every ship.
+- **Not converged:** `Ask before bumping` splits evenly (always: CA, HV, LB, MA; when ambiguous: AR,
+  CH, GT, VA) and stays per repository until the user picks one. `Bump command` already follows from
+  the version file.
+
 ## Unverified
 
 - Whether `skills experimental_install` restores reliably from `skills-lock.json`.
