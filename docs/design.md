@@ -4,8 +4,8 @@ Status: decided 2026-10-26 (see Decisions); pilot step 1 done; `end-session`, `h
 `ship` and `docs-updater` written, carrying ApexRacers' fixes through #456, and installed in this
 repository and in ApexRacers (pilot step 2, apexracers#458, 2026-10-27), then in causet (#342),
 caitlyn-holland-vip (#242), holland-vip (#214) and GuardianTracker (#440), all 2026-10-27, and
-PressGolf (#182), Nearcited (#237) and LeaseBook (#637), 2026-10-27/28; magic-agenda and
-valleys-at-ashebrook-hoa wait for the user's go-ahead.
+PressGolf (#182), Nearcited (#237), LeaseBook (#637) and magic-agenda (#556), 2026-10-27/28;
+valleys-at-ashebrook-hoa waits for the user's go-ahead.
 
 ## Goal
 
@@ -125,9 +125,9 @@ step on or off), **step** (selects one of several implementations), **hook** (re
 | Public repo slug | `jwh3times/<name>`; GitHub casing differs from the directory (`GuardianTracker`, `LeaseBook`) |
 | Private issue repo | named in the public tree (AR, HV, VA); discovered from the checkout (LB, NC, GT, MA, CH); none (CA, PG) |
 | Board | owner `jwh3times`, one project per repository except PG; its number is a per-repo setting |
-| Board fields and values | AR Status (Todo/In Progress/Blocked/Parked/Done) + Blocked by; HV `Deferred` for Parked; CH, CA Status/Gate/Area; GT Status/Blocked By/Chain/Order/Gate/ADR/Triage; LB Track/Gate + a Status its board's workflows set; MA Phase/Priority/Size/Status (auto-adds public issues); NC Status/Stage/Gate; VA Status/Gate/Area/Next Action/Blocking Item |
+| Board fields and values | AR Status (Todo/In Progress/Blocked/Parked/Done) + Blocked by; HV `Deferred` for Parked; CH, CA Status/Gate/Area; GT Status/Blocked By/Chain/Order/Gate/ADR/Triage; LB Track/Gate + a Status its board's workflows set; MA Phase/Priority/Size/Gate by hand + a Status its board's workflows set (one private board holds both repositories' issues; it auto-adds only public ones); NC Status/Stage/Gate; VA Status/Gate/Area/Next Action/Blocking Item |
 | New work | an issue (the shared `end-session`'s behavior before this setting); a board draft item until the work is committed to (GT, ADR 0024) |
-| Security findings | draft repository advisory (AR — plus a draft board item — CH, CA, HV); private issue labelled `security` (LB); private doc (GT `security-limitations.md`, MA README register, VA tracker + wiki); `SECURITY.md` (PG) |
+| Security findings | draft repository advisory (AR — plus a draft board item — CH, CA, HV); private issue labelled `security` (LB); private doc (GT `security-limitations.md`, MA a private issue plus the register in `private/README.md`, VA tracker + wiki); `SECURITY.md` (PG) |
 
 Labels stay in `triage-labels.md`, or in `issue-tracker.md`'s own section where a repository keeps
 them there (CH). Extras beyond the five canonical labels: CA `human-action-required`; LB
@@ -204,7 +204,7 @@ in the body, warn-only, using `Board` and `Private issue repository`.
 | Setting | Found |
 | --- | --- |
 | Fast checks | list of {folder, command, optional "only when these paths changed"}; must cover every required check that runs locally. AR: `web/` prettier, lint, build; root `dotnet build`, `npm run sync:agents:check`, `npm run lint:agents` (the required "Verify generated agent config" check, #455). GT adds Go `gofmt`/`go vet`. LB `dotnet format --verify-no-changes`, conditional `api:generate`. NC conditional wrangler dry-run and e2e. PG runs `test:coverage` and a 90% patch-coverage script |
-| Branch naming | `agent/<topic>` (CH, GT, HV), `<type>/<topic>` (LB, PG), `feat/…`, never `release/*` (MA), `<type>/<issue#>-<slug>` (AR, part of `Issue link`) |
+| Branch naming | `agent/<topic>` (CH, GT, HV), `<type>/<topic>` (LB, PG), `<type>/<issue#>-<slug>`, never `release/*` (MA), `<type>/<issue#>-<slug>` (AR, part of `Issue link`) |
 | Issue link | AR (#456), and the same rule in every `dev-flow.md`: the body opens with `Closes #N` or `Part of #N`, `N` taken from the branch; `Flow waived by the user: <reason>` for a waiver; no line for dependency bumps, docs-and-agent-config-only changes and release prep. NC: one keyword per issue. VA: slice branches `feat/<spec#>-slice-<n>-<slug>` |
 | PR body | template path; extra lines: `Release level:` (CH), `Fixes #NN` (PG), template checklist (AR, NC) |
 | Hook: review before PR | NC's trigger table; PG's impact flags feeding the PR body |
@@ -393,14 +393,15 @@ installed into a scratch project on Fedora (`gh` authenticated).
   `docs/agents/docs.md` and fails when the map is missing.
 - MA and VA keep area guides in `docs/agents/`, beside the settings files. Check their names
   against the settings topics (`docs`, `releases`, `ship`, `workspace`, `handoffs`,
-  `issue-tracker`, `human-follow-up`) at their install.
+  `issue-tracker`, `human-follow-up`) at their install. MA's (`boards.md`, `labels.md` and the like)
+  name app areas and clashed with none (MA#556).
 
 - VA `ship` edits the PR body to link the private follow-up issue and wiki page, against Decision 2.
   The shared body keeps those links in the report; VA's `dev-flow.md` or follow-up doc changes at
   its install.
-- MA's `dev-flow.md` says a `Mints **vX.Y.Z**.` line follows the link line, but its `ship` never
-  writes it. The shared body writes the version the merge will mint beside `Release level:`; MA's
-  doc adopts that wording at its install.
+- ~~MA's `dev-flow.md` says a `Mints **vX.Y.Z**.` line follows the link line, but its `ship` never
+  writes it.~~ Fixed in MA#556: its `dev-flow.md` now describes the `Release level:` line and the
+  version the shared body writes beside it.
 - `npx skills` run inside this repository resolves to this repository's own package (also named
   `skills`, no bin) and fails with "could not determine executable to run". Name the version:
   `npx skills@1.7.4`.
@@ -413,7 +414,8 @@ installed into a scratch project on Fedora (`gh` authenticated).
 - No repository locks `handoff_map.json`. On the CLI mirror, handoff pulls before writing the
   document and pushes the whole map after `set`; lets-go has the same pull → clear → push window. A
   concurrent session lost an apexracers clear on 2026-10-26.
-- MA's map script hardcodes the Proton account and `My Files` casing.
+- ~~MA's map script hardcodes the Proton account and `My Files` casing.~~ Moot: MA#556 replaced it
+  with the shared `handoff-map.mjs` and the machine config.
 - `sync-agents.mjs` (shared verbatim by all 10) writes its banner into the authored skill when
   `skills update` has left `.claude/skills/<name>` as a symlink; see Verified.
 - ~~GT `end-session` says nothing in `private/` can reach a commit; `private/` is its own
@@ -527,6 +529,25 @@ installed into a scratch project on Fedora (`gh` authenticated).
      to still resolve.
    - LB's `check-docs.mjs` rejects some commands in `docs/agents/` (`npm run typecheck`), so its
      `Fast checks` call `npm run build`, which runs `tsc -b`.
+   What MA found (magic-agenda#556):
+   - MA's `human-follow-up.md` spoke of a "designated private project board", so the survey assumed a
+     second board. There is one: MA's project is private and holds both repositories' issues, and
+     only public ones are auto-added. `Board` serves both, and `Follow-up board` is `same as Board`.
+     Check `gh project item-list` for which repositories a board holds before proposing a second.
+   - Vitest's default include matched `lint-agent-neutrality.test.mjs`, a `node:test` file, and
+     failed `npm test` with "No test suite found". MA excludes it beside `sync-agents.test.mjs`; a
+     consumer whose test runner globs the whole repository needs the same exclusion.
+   - MA's Prettier formats every Markdown file, settings files included, and split a code span
+     across two lines in two of them (as at GT). After formatting, look for a line with an odd count
+     of backticks outside a fence.
+   - MA's `human-follow-up.md` was a full procedure. It became the four settings and a "Done when"
+     line; the shared `## Procedure` covered every step it had.
+   - MA's old `ship` left the full suites and the build to CI. Its `Fast checks` keep that choice
+     and name the CI-only required checks, short of the setting's "every required check that can
+     run locally".
+   - MA's private wiki had a Fedora handoff runbook built on an exported `HANDOFFS_DIR` and the old
+     `scripts/handoff-map.mjs`, as HV's did. Each repository with such a page needs it rewritten for
+     the machine config after its install.
 3. ~~If updates flow, do `ship` and `releases.md`/`ship.md`.~~ Written early, 2026-10-27, by the
    user's choice, so the pilot can install all four skills. (`handoff`/`lets-go` and the machine
    config were written early, 2026-10-26, so this repository could hand off between machines.)
