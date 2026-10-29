@@ -9,6 +9,6 @@
   },
   "scripts": {
     "build": "node scripts/build-settings.mjs && node scripts/self-install.mjs && node scripts/sync-agents.mjs",
-    "check": "node scripts/build-settings.mjs --check && node scripts/self-install.mjs --check && node scripts/sync-agents.mjs --check && node scripts/lint-agent-neutrality.mjs && node --test 'scripts/*.test.mjs'"
+    "check": "node scripts/build-settings.mjs --check && node scripts/self-install.mjs --check && node scripts/sync-agents.mjs --check && node scripts/lint-agent-neutrality.mjs && node --test \"scripts/*.test.mjs\""
   }
 }
