@@ -5,7 +5,8 @@ Status: decided 2026-10-26 (see Decisions); pilot step 1 done; `end-session`, `h
 repository and in ApexRacers (pilot step 2, apexracers#458, 2026-10-27), then in causet (#342),
 caitlyn-holland-vip (#242), holland-vip (#214) and GuardianTracker (#440), all 2026-10-27, and
 PressGolf (#182), Nearcited (#237), LeaseBook (#637), magic-agenda (#556) and
-valleys-at-ashebrook-hoa (#477), 2026-10-27/28: every consumer.
+valleys-at-ashebrook-hoa (#477), 2026-10-27/28: every consumer. On 2026-10-28 every consumer
+converged on the settings defaults (#16, see Convergence) and took #17.
 
 ## Goal
 
