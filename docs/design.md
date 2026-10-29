@@ -336,8 +336,12 @@ per-project install and the shared scripts are recorded under Architecture.
 7. **Layout:** skills in `skills/<name>/`; catalog in `settings/` with
    `scripts/build-settings.mjs` copying it into each skill; canonical shared scripts with
    `node:test` suites in `scripts/`; `npm run check` locally and in CI.
-8. **Deferred:** converging release schemes (a `releases.md` setting until `ship` is ported) and
-   pruning overlapping third-party skills (a consumer-repo question, not this repository's).
+8. **Release schemes stay per repository** (settled 2026-10-29, after `ship` was ported). Each
+   `Scheme` matches how that project ships: `per-merge` where every merge deploys, `cut-on-line`
+   where a workflow or a maintainer cuts releases (LB, CA), `none` where nothing is versioned (NC,
+   PG). The `releases.md` settings carry the differences, AR's `roll up` included.
+   **Deferred:** pruning overlapping third-party skills (a consumer-repo question, not this
+   repository's).
 
 ## Convergence
 
@@ -463,9 +467,15 @@ help, docs and source read.
   there.~~ Fixed in AR #455; the shared `Fast checks` setting must cover required checks.
 - ~~VA's `skills-lock.json` records `handoff` as `mattpocock/skills`; the content is the user's.~~
   Fixed in VA#477, which recorded the shared `handoff`, as CH's and HV's installs did.
-- No repository locks `handoff_map.json`. On the CLI mirror, handoff pulls before writing the
-  document and pushes the whole map after `set`; lets-go has the same pull → clear → push window. A
-  concurrent session lost an apexracers clear on 2026-10-26.
+- Nothing locks `handoff_map.json`. A concurrent session lost an apexracers clear on 2026-10-26,
+  before the shared `handoff-map.mjs`. Since #1, a write on the CLI mirror downloads the map,
+  uploads it, reads it back from the cloud, and retries while its own entry is wrong. One gap
+  remains: a session that downloaded the map before another's confirmed write can upload over it
+  seconds later, and only its own entry is read back, so the other repository's entry is lost
+  unnoticed. On a synced folder the client keeps a conflict copy, which the script reports.
+  Accepted on 2026-10-29 rather than locked: one user rarely writes two keys seconds apart, and a
+  lost `set` shows at the next lets-go. A lost `clear` leaves an old document named, which a
+  second lets-go would resume.
 - ~~MA's map script hardcodes the Proton account and `My Files` casing.~~ Moot: MA#556 replaced it
   with the shared `handoff-map.mjs` and the machine config.
 - ~~`sync-agents.mjs` (shared verbatim by all 10) writes its banner into the authored skill when
