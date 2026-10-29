@@ -359,8 +359,10 @@ consumers, and the user chose to converge the repositories rather than the skill
   against the old wording ("every required check that can run locally"), which none of them could
   meet without slowing every ship.
 - **Not converged:** `Ask before bumping` splits evenly (always: CA, HV, LB, MA; when ambiguous: AR,
-  CH, GT, VA) and stays per repository until the user picks one. `Bump command` already follows from
-  the version file.
+  CH, GT, VA) and stays per repository, by the user's choice on 2026-10-28: it records how closely
+  the user wants to review each repository's releases, not a habit that drifted, so it carries no
+  **Default** line: discovery proposes `when ambiguous` and each repository writes its choice.
+  `Bump command` already follows from the version file.
 
 ## Unverified
 
