@@ -367,8 +367,7 @@ consumers, and the user chose to converge the repositories rather than the skill
 
 ## Unverified
 
-- Whether `skills experimental_install` restores reliably from `skills-lock.json`.
-- Whether the `skills` CLI supports any post-install hook (assumed not; step 0 does not need one).
+None: the last two were settled on 2026-10-29 (see Verified).
 
 ## Verified
 
@@ -388,9 +387,8 @@ installed into a scratch project on Fedora (`gh` authenticated).
   writes the bannered mirror *through* the link, so the "GENERATED — do not edit" banner lands in
   `.agents/skills/<name>/SKILL.md`; the orphan pass then deletes the link, leaving the skill missing
   from `.claude/skills/` until a second run. Fixed here (links are removed before the write pass,
-  with a regression test) in `scripts/sync-agents.mjs`; each repository takes the fixed copy at its
-  pilot install. Until then, a repository that runs `skills update` must check
-  `git diff .agents/skills` for the banner.
+  with a regression test) in `scripts/sync-agents.mjs`, and every consumer took the fixed copy at
+  its pilot install.
 - **Claude Code does not read `.agents/skills/`.** Its skills docs and settings reference list only
   `.claude/skills/` for project skills, and Claude Code 2.1.310 listed a control skill there but not
   one placed only in `.agents/skills/`.
@@ -411,6 +409,23 @@ editing the lock's `computedHash`.
 - **The `sync-agents.mjs` fix covers junctions.** Node's `lstat` reports a junction as a symbolic
   link, so one run left `.agents/skills/<name>/SKILL.md` without the banner, replaced the junction
   with the bannered copy, and passed `--check`.
+
+`skills` 1.7.4, Windows 11, 2026-10-29: the five skills installed as the consumers install them
+(`add jwh3times/skills -s <each> -a codex --copy -y`) into a scratch project, then the package's
+help, docs and source read.
+
+- **No post-install hook.** Nothing in the CLI's commands, options or docs runs a step after
+  `add`, `update` or a restore. The "Hooks" row in its `docs/agents.md` is about agents' own skill
+  features, and `allowUnsafeHooksPath` is a git option it passes to `simple-git`. The documented
+  `node scripts/sync-agents.mjs` after each install stays the way to regenerate the mirror.
+- **`experimental_install` restores the source as it is now, not the locked version.** With
+  `.agents/skills/` deleted it cloned the source once per skill and restored all five byte for byte,
+  leaving the lock unchanged and writing nothing outside `.agents/skills/` (no `.claude/skills/`
+  entry, so `sync-agents.mjs` still has to run). But the lock records no commit, only
+  `computedHash`, and the restore does not check that hash: given a wrong one, it restored without
+  a warning and rewrote the hash to the upstream folder's. It also overwrote a local edit in an
+  existing skill folder. So once upstream moves on, a restore would deliver the new version, as
+  `add` does (inferred, not run against a changed upstream). The committed `.agents/skills/` copy stays the record of what a repository runs.
 
 `proton-drive` CLI 0.8.0, Fedora, 2026-10-26:
 
@@ -453,8 +468,10 @@ editing the lock's `computedHash`.
   concurrent session lost an apexracers clear on 2026-10-26.
 - ~~MA's map script hardcodes the Proton account and `My Files` casing.~~ Moot: MA#556 replaced it
   with the shared `handoff-map.mjs` and the machine config.
-- `sync-agents.mjs` (shared verbatim by all 10) writes its banner into the authored skill when
-  `skills update` has left `.claude/skills/<name>` as a symlink; see Verified.
+- ~~`sync-agents.mjs` (shared verbatim by all 10) writes its banner into the authored skill when
+  `skills update` has left `.claude/skills/<name>` as a symlink.~~ Fixed here (see Verified). On
+  2026-10-29 the `origin/main` copies of `sync-agents.mjs` and `lint-agent-neutrality.mjs` in nine
+  consumers matched this repository's; causet was not checked out on the machine that compared.
 - ~~GT `end-session` says nothing in `private/` can reach a commit; `private/` is its own
   repository.~~ Moot: GT#440 replaced it with the shared skill.
 - ~~GT `end-session` fences POSIX commands as `powershell`; AR `end-session` says Git Bash on
