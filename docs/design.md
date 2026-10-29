@@ -369,7 +369,6 @@ consumers, and the user chose to converge the repositories rather than the skill
 
 - Whether `skills experimental_install` restores reliably from `skills-lock.json`.
 - Whether the `skills` CLI supports any post-install hook (assumed not; step 0 does not need one).
-- How `update`'s symlink behaves on Windows (symlinks may need Developer Mode).
 
 ## Verified
 
@@ -401,6 +400,17 @@ installed into a scratch project on Fedora (`gh` authenticated).
   is not a repository.
 - `add ./ -s <name> -a codex --copy -y` from this checkout copies `skills/<name>` byte for byte
   (2026-10-26), locked as `sourceType: local`, source `.`.
+
+`skills` 1.7.4, Windows 11 without Developer Mode, Node 26, 2026-10-28:
+`add jwh3times/skills -s lets-go --copy -y` into a scratch project, then `update -p -y` after
+editing the lock's `computedHash`.
+
+- **`update` needs no Developer Mode on Windows.** It replaces each copy outside `.agents/skills/`
+  with a directory junction to `.agents/skills/<name>`, not a symlink, and overwrites local edits as
+  on Fedora.
+- **The `sync-agents.mjs` fix covers junctions.** Node's `lstat` reports a junction as a symbolic
+  link, so one run left `.agents/skills/<name>/SKILL.md` without the banner, replaced the junction
+  with the bannered copy, and passed `--check`.
 
 `proton-drive` CLI 0.8.0, Fedora, 2026-10-26:
 
