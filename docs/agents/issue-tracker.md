@@ -4,10 +4,6 @@
 
 jwh3times/skills
 
-## Private issue repository
-
-none
-
 ## Board
 
 none
@@ -15,11 +11,3 @@ none
 ## Board fields
 
 none
-
-## New work
-
-issue
-
-## Security findings
-
-A draft repository advisory in jwh3times/skills. Never a public issue.

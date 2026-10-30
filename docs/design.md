@@ -418,6 +418,13 @@ waves, each a PR here or a refresh of the consumers:
   companion, the generated-config check `always`, a clean-and-pushed final check, release
   settings derived from `Scheme` and the version file, the follow-up destination, label, board and
   wiki index, `Sync with main`, `New work`, security findings, and a companion restore command.
+  **Done 2026-10-30 (#27).** Each default is the value most repositories already wrote; a default
+  may follow from another setting (`by Scheme`, `with the Private companion checked out`), and
+  where it gives a repository no value the setting is asked for as before. The generated-config
+  check always runs (CH, GT, HV, LB, PG ran it only when agent sources changed). The bump command
+  takes VA's `--allow-same-version`, so a re-run of `ship` lands on the same version.
+  `Ask before bumping` still has no default outside `Scheme: none`, and `Next-version command`
+  and `Changelog check` get theirs from Wave 3's canonical scripts.
 - **Wave 2: per-repository settings**: unmapped documents in the doc maps, stale paths, cleanup
   lists that contradict the body, one marker per document kind.
 - **Wave 3: canonical scripts**, copied like `sync-agents.mjs`: `sync-main.mjs` (eight
