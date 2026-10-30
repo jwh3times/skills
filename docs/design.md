@@ -369,6 +369,64 @@ consumers, and the user chose to converge the repositories rather than the skill
   **Default** line: discovery proposes `when ambiguous` and each repository writes its choice.
   `Bump command` already follows from the version file.
 
+### Second survey, 2026-10-29
+
+A full survey compared every settings topic in the ten consumers, plus what surrounds the skills:
+`AGENTS.md`, `docs/agents/dev-flow.md` and `triage-labels.md`, shared-purpose scripts, CI, and the
+`mattpocock/skills` installs. All ten ran the current bodies of the five skills, so every difference
+came from settings, surroundings, or third-party skills. The user's goal: **every repository
+behaves the same way**, and a difference survives only where the project itself differs (its
+toolchain, its companion, its infrastructure).
+
+Decided by the user on 2026-10-30:
+
+1. **One development flow everywhere.** CH's forked `mattpocock/skills` set (its ADR-0006) gives way
+   to the same skills and the same flow as the other nine.
+2. **The same commit and merge rules everywhere.** Agents ask before committing companion changes
+   (`Companion commit policy` becomes `ask` in every repository, so it no longer varies), `ship`
+   commits and pushes, nothing is set to merge automatically, and PRs land as merge commits, never
+   squashed, this repository included. Every repository allows only merge commits, deletes the
+   head branch on merge, and limits its ruleset to the `merge` method. CA is the one exception: it
+   lands work with its own `cst merge --compact`, the tool the project builds.
+3. **Private-tracker work** follows LB's model, which `ship` already supports: a ready private issue
+   gates the work, with no link in the branch or PR, and is closed by hand. Work is claimed by
+   assigning the issue (GT, MA, PG already do).
+4. **No approval step before filing an issue**: PG's draft-for-approval rule is dropped.
+5. **Follow-ups go to the private companion** where one exists; NC stops filing them publicly.
+6. **CA's changelog** takes `## [x.y.z] - date` headings, and its `Scheme` value stops overriding
+   the body.
+7. **Security findings are draft advisories in every repository**; LB and MA move their open
+   findings out of private issues.
+8. **Board fields** are not converged now: filed as #24.
+
+The survey also found bugs in the bodies that affect every repository, and the work runs in
+waves, each a PR here or a refresh of the consumers:
+
+- **Wave 0: the bodies.** `ship`'s competing-PR check passed a path to `gh pr diff`, which rejects
+  it (gh 2.102), so no clash was ever reported; `lets-go` never ran `Hook: after sync`; the
+  `Companion commit policy` value `ship` left companion work committed by neither skill; roll-up
+  never told `ship` to find the skipped tags. Rules three or more repositories wrote into their
+  settings move into the bodies: filling the PR template with evidence-only ticks, the checks
+  before a companion commit, a private-visibility check before publishing a follow-up, follow-up
+  steps in the issue body when there is no wiki, the machine-local files a handoff names, stopping
+  on a diverged companion, and installing after a lockfile change.
+- **Wave 1: catalog defaults**, so repositories drop headings: a status command that fetches the
+  companion, the generated-config check `always`, a clean-and-pushed final check, release
+  settings derived from `Scheme` and the version file, the follow-up destination, label, board and
+  wiki index, `Sync with main`, `New work`, security findings, and a companion restore command.
+- **Wave 2: per-repository settings**: unmapped documents in the doc maps, stale paths, cleanup
+  lists that contradict the body, one marker per document kind.
+- **Wave 3: canonical scripts**, copied like `sync-agents.mjs`: `sync-main.mjs` (eight
+  implementations), `next-version.mjs` and `check-changelog.mjs` (six each), and a docs check
+  (links, and doc-map coverage) replacing three local link checkers.
+- **Wave 4: the surroundings**: shared `AGENTS.md` blocks for the development flow and the shared
+  skills, copied verbatim and linted, replacing each repository's restatements; `dev-flow` and
+  `triage-labels` as settings topics with defaults.
+- **Wave 5: third-party skills**: one `mattpocock/skills` snapshot in every repository (four were
+  in use, and seven repositories had edited skill bodies by hand), installed skills kept out of
+  formatters, local edits moved into settings or `AGENTS.md`, and a check that installed copies
+  match the lock.
+
 ## Unverified
 
 None: the last two were settled on 2026-10-29 (see Verified).
