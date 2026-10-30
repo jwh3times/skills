@@ -409,7 +409,11 @@ waves, each a PR here or a refresh of the consumers:
   settings move into the bodies: filling the PR template with evidence-only ticks, the checks
   before a companion commit, a private-visibility check before publishing a follow-up, follow-up
   steps in the issue body when there is no wiki, the machine-local files a handoff names, stopping
-  on a diverged companion, and installing after a lockfile change.
+  on a diverged companion, and installing after a lockfile change. **Done 2026-10-30 (#26).**
+  `Companion commit policy` is gone: the workspace topic's `## Procedure` commits companion changes
+  (inspect, scan for values, ask, check the companion is `PRIVATE`, push, verify), and
+  `Companion commit checks` holds only what a repository adds to it. Each consumer drops the old
+  heading, and the setting lines the bodies now cover, when it takes the refresh.
 - **Wave 1: catalog defaults**, so repositories drop headings: a status command that fetches the
   companion, the generated-config check `always`, a clean-and-pushed final check, release
   settings derived from `Scheme` and the version file, the follow-up destination, label, board and
