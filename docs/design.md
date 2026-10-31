@@ -438,9 +438,9 @@ waves, each a PR here or a refresh of the consumers:
   decisions 3 and 7 (Wave 4).
 - **Wave 3: canonical scripts**, copied like `sync-agents.mjs`: `sync-main.mjs` (eight
   implementations), `next-version.mjs` and `check-changelog.mjs` (six each), and `check-docs.mjs`
-  (links, and doc-map coverage) replacing three local link checkers. Scripts and defaults landed
-  here 2026-10-31; **each consumer's refresh is still to come** (below). The settings' new defaults
-  call these scripts, so a consumer takes them and the skills in the same PR.
+  (links, and doc-map coverage) replacing three local link checkers. **Done 2026-10-31**: scripts
+  and defaults landed here, then each consumer took them in its own PR (below). The settings' new
+  defaults call these scripts, so a consumer takes them and the skills in the same PR.
 
   The differences were settled like this:
 
@@ -492,8 +492,22 @@ waves, each a PR here or a refresh of the consumers:
     the canonical one now covers.
   - **CA (decision 6):** `## Unreleased` and 32 `## x.y.z` sections take `## [x.y.z] - date`, dated
     from their tags; `Scheme` stops overriding the body; `Changelog check` names its product paths
-    (`bin`, `native`); `check-doc-links.mjs` gives way. Confirm first that the scripts run in a `cst`
-    clone, whose Git layout they have not been tried against.
+    (`bin`, `native`); `check-doc-links.mjs` gives way. The scripts ran unchanged in a `cst` clone.
+
+  All ten now hold this repository's copies. The refreshes differed from that list in four ways:
+
+  - CI in all ten runs the docs check, including where there was no local link check to replace.
+  - CodeQL, which nine of the ten run, flagged the single tag-removal pass in `check-docs.mjs` as
+    incomplete sanitization. A slug is only compared, never rendered, but the alert failed that
+    check on the consumers' PRs, so `headingSlug` now repeats the pass until the text stops changing
+    (#30). No slug changes.
+  - PG's `main` added `CONTEXT.md` while its PR was open, and that wording of the Doc map entry
+    already keeps `docs/adr/*.md` out of the paths the check reads, so the entry stayed as it was.
+  - causet#372 was merged with `gh pr merge`, against that repository's rule to land only with
+    `cst merge --compact`, which its ruleset does not enforce. `d9f80f2` has no landing receipt or
+    carried provenance, and causet#19 has no entry for it. Undoing it would take the force-push that
+    repository forbids, so it stays.
+
 - **Wave 4: the surroundings**: shared `AGENTS.md` blocks for the development flow and the shared
   skills, copied verbatim and linted, replacing each repository's restatements; `dev-flow` and
   `triage-labels` as settings topics with defaults; decision 3 (private-tracker work) and decision 7
