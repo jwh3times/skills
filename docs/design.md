@@ -131,10 +131,10 @@ step on or off), **step** (selects one of several implementations), **hook** (re
 | New work | an issue (the shared `end-session`'s behavior before this setting); a board draft item until the work is committed to (GT, ADR 0024) |
 | Security findings | draft repository advisory (AR — plus a draft board item — CH, CA, HV); private issue labelled `security` (LB); private doc (GT `security-limitations.md`, MA a private issue plus the register in `private/README.md`, VA tracker + wiki); `SECURITY.md` (PG) |
 
-Labels stay in `triage-labels.md`, or in `issue-tracker.md`'s own section where a repository keeps
-them there (CH). Extras beyond the five canonical labels: CA `human-action-required`; LB
-`blocked-by-human`, `security`, `product-decision`; NC `bug`/`enhancement`/`documentation`. CH has
-no `triage-labels.md`.
+Labels are their own topic since Wave 4 (`settings/triage-labels.md`). When surveyed, they stayed in
+`triage-labels.md`, or in `issue-tracker.md`'s own section where a repository kept them there (CH).
+Extras beyond the five canonical labels: CA `human-action-required`; LB `blocked-by-human`,
+`security`, `product-decision`; NC `bug`/`enhancement`/`documentation`. CH has no `triage-labels.md`.
 
 ### `docs/agents/human-follow-up.md` — exists under four names; normalize
 
@@ -509,9 +509,46 @@ waves, each a PR here or a refresh of the consumers:
     repository forbids, so it stays.
 
 - **Wave 4: the surroundings**: shared `AGENTS.md` blocks for the development flow and the shared
-  skills, copied verbatim and linted, replacing each repository's restatements; `dev-flow` and
-  `triage-labels` as settings topics with defaults; decision 3 (private-tracker work) and decision 7
-  (security findings as draft advisories).
+  skills, replacing each repository's restatements; `dev-flow` and `triage-labels` as settings topics
+  with defaults; decision 3 (private-tracker work) and decision 7 (security findings as draft
+  advisories). Topics, blocks and script landed here first; **each consumer's refresh is still to
+  come** (below).
+
+  Decided by the user 2026-10-31:
+
+  - **`sync-agents.mjs` writes the blocks** instead of each repository pasting them under a new lint.
+    `settings/agents-md.md` holds the text and installs with `ship`; a repository's `AGENTS.md`
+    carries the markers under whichever heading fits, and `--check` fails on drift. This needs no new
+    script or CI job: all ten already run the check. The `AGENTS.md blocks` setting says which blocks
+    a repository takes; this repository takes none, since it has no flow skills.
+  - **The flow is a shared default, and each file shrinks to what differs.** `docs/agents/dev-flow.md`
+    keeps `Docs and agent config` and `Branch types` when they go beyond the defaults, plus anything
+    the repository adds to the flow (GT's board drafts, for one). `Issue link` now defaults from it.
+    `docs/agents/triage-labels.md` stays as a pointer, since `AGENTS.md` and `setup-matt-pocock-skills`
+    name it, and holds `Extra labels`: MA's `deferred` and LB's `blocked-by-human` stay local, and
+    nobody else gains a label.
+  - **CH joins in Wave 5.** The shared flow names `/wayfinder`, `/triage` and `/implement`, which
+    CH's fork removed. Decision 1 had no wave: CH takes the flow block and the standard skills
+    together when the snapshot is chosen, and `AGENTS.md blocks` limits it to `shared-skills` until
+    then.
+  - **Decision 7's move stays out of this conversation's sight.** The user names the private issues
+    that are unpatched findings, and a script copies each to a draft advisory and closes it, printing
+    no content. An accepted risk stays private, by LB's rule.
+
+  Decision 3's other half is a changed rule: NC filed a public issue to carry private work's plumbing,
+  and now follows the shared flow's `Private work` section like the others.
+
+  Each consumer's refresh, beyond taking the skills and the new `sync-agents.mjs`:
+
+  - **All but CH:** add both blocks' markers to `AGENTS.md`, under the existing headings, and remove
+    the restatements they replace; reduce `dev-flow.md` to its settings and additions; fix links to
+    the sections that move, which `check-docs.mjs` reports; drop the `Issue link` heading unless it is
+    `none`.
+  - **CH:** the `shared-skills` block only.
+  - **All with a `triage-labels.md`:** reduce it to a pointer and any `Extra labels`.
+  - **NC:** the public-issue rule goes from `dev-flow.md` and `issue-tracker.md`.
+  - **AR:** `AGENTS.md` still lists security findings among what the companion holds.
+  - **LB, MA, AR:** the findings move, once the user names them.
 - **Wave 5: third-party skills**: one `mattpocock/skills` snapshot in every repository (four were
   in use, and seven repositories had edited skill bodies by hand), installed skills kept out of
   formatters, local edits moved into settings or `AGENTS.md`, and a check that installed copies

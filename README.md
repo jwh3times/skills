@@ -27,7 +27,7 @@ hand from `scripts/` here, each with its test:
 
 | Script | Copied by | Does |
 | --- | --- | --- |
-| `sync-agents.mjs`, `lint-agent-neutrality.mjs` | every repository | Mirror the skills for Claude Code, and lint them for tool neutrality. |
+| `sync-agents.mjs`, `lint-agent-neutrality.mjs` | every repository | Mirror the skills for Claude Code and write the shared `AGENTS.md` blocks, and lint the skills for tool neutrality. |
 | `check-docs.mjs` | every repository | Checks local links, and that the `Doc map` matches the documents. |
 | `sync-main.mjs` | a repository with a private companion | Fast-forwards the checkout and the companion to `origin/main`, both or neither. |
 | `next-version.mjs`, `check-changelog.mjs` | a repository with a changelog | Print the version the next merge mints, and verify the changelog for that merge. |
