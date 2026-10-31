@@ -84,9 +84,10 @@ does, without the up-to-date check; an unchanged skill rewrites to an identical 
 
 Every skill installs per project, `handoff`/`lets-go` included: helper scripts keep a fixed
 repo-root-relative path (`.agents/skills/handoff/handoff-map.mjs`), cloud sessions get a committed
-copy, and each repository keeps one lock file. The CLI installs only skills, so `sync-agents.mjs`
-and `lint-agent-neutrality.mjs` are copied by hand; this repository holds their canonical copies
-and tests, and fixes land here first.
+copy, and each repository keeps one lock file. The CLI installs only skills, so the shared scripts
+(`sync-agents.mjs`, `lint-agent-neutrality.mjs`, and Wave 3's `sync-main.mjs`, `next-version.mjs`,
+`check-changelog.mjs` and `check-docs.mjs`) are copied by hand; this repository holds their canonical
+copies and tests, and fixes land here first.
 
 **This repository installs its own skills**, so `handoff` and `lets-go` work here like anywhere
 else: `npx skills@1.7.4 add ./ -s <name> -a codex --copy -y` copies `skills/<name>` verbatim into
@@ -433,13 +434,69 @@ waves, each a PR here or a refresh of the consumers:
   which carry current-state claims and keep their mixed rule. Cleanup lists drop the scratch-file
   and worktree lines the body already covers, and CH's and HV's "left in place by default" openers.
   PG and CA drop their approve-before-filing steps (decision 4). Left for later waves: the
-  `mattpocock/skills` template lines in `issue-tracker.md` (Wave 5), and decisions 3, 6 and 7.
+  `mattpocock/skills` template lines in `issue-tracker.md` (Wave 5), decision 6 (Wave 3), and
+  decisions 3 and 7 (Wave 4).
 - **Wave 3: canonical scripts**, copied like `sync-agents.mjs`: `sync-main.mjs` (eight
-  implementations), `next-version.mjs` and `check-changelog.mjs` (six each), and a docs check
-  (links, and doc-map coverage) replacing three local link checkers.
+  implementations), `next-version.mjs` and `check-changelog.mjs` (six each), and `check-docs.mjs`
+  (links, and doc-map coverage) replacing three local link checkers. Scripts and defaults landed
+  here 2026-10-31; **each consumer's refresh is still to come** (below). The settings' new defaults
+  call these scripts, so a consumer takes them and the skills in the same PR.
+
+  The differences were settled like this:
+
+  - `sync-main.mjs` keeps what any copy did that the others lacked: GT's preflight of both
+    repositories before either moves, AR's fast-forward when another worktree holds `main`, the
+    creation of a missing local `main`, MA's and GT's silence about the companion's revisions and
+    errors, and GT's refusal of a detached HEAD or of a companion that is a link or a linked
+    worktree. It drops VA's `--branch` (all ten default to `main`), the repository-named environment
+    variables for the companion's path (`--target` stays), and GT's `core.excludesFile=` override,
+    which would count a machine's globally ignored files as uncommitted work.
+  - `next-version.mjs` reads the `Version file` setting, so no repository names it twice. The
+    declared build is a floor (five of six; AR's version file stays at `x.y.0`, so it computes the
+    same), and it takes AR's best-effort tag refresh. It printed the same version as each of the six
+    repositories' own scripts on their real tags, 2026-10-31.
+  - `check-changelog.mjs`, decided by the user 2026-10-31: a `per-merge` branch's newest section must
+    name the version it will mint, everywhere. AR used to pass a PR that added no section, and its
+    human PRs now need one; workflows keep exempting dependency bots. With `Skipped tags: backfill`
+    every released tag needs a section, as only MA checked before; the next human PR in a repository
+    backfills any gap. `cut-on-line` moves LB's inline command into the script and reaches CA, which
+    had no check: `--source` names the paths whose changes need an `Unreleased` entry. A version
+    change is read by value, so editing another field of `package.json` is no cut.
+  - `check-docs.mjs` takes CA's GitHub slugs and fence handling, GT's reference links and escape
+    check, and LB's absolute-path check and coverage rule. It accepts only tracked targets, in exact
+    case, so a link into the companion fails on every machine instead of only on a clean clone.
+    Coverage spans every document outside the installed skills, wider than LB's folders: all ten
+    needed at most small fixes. It also reports a Doc map path that matches nothing. LB's other rules
+    (lifecycle metadata, the ADR index, review dates) stay its own.
+
+  Each consumer's refresh, beyond taking the skills:
+
+  - **All ten:** copy `check-docs.mjs`; replace local link checks with it; drop a `Docs validation`
+    heading that adds nothing to the default; keep the new scripts and tests out of formatters and
+    test runners, beside their `sync-agents` lines.
+  - **AR, CH, GT, HV, LB, MA, NC, VA:** copy `sync-main.mjs` over the local one (VA's is TypeScript,
+    and CH, HV and VA keep their tests elsewhere: delete those), point `sync:main` at it, drop the
+    `Sync with main` heading.
+  - **AR, CH, GT, HV, MA, VA:** copy `next-version.mjs` and `check-changelog.mjs`; call them from the
+    tag and changelog workflows in place of scripts and inline checks; drop both headings. GT keeps
+    its footer policy with `&&` after the default. MA's `build-info.ts` and `next-version.d.mts`
+    keep working: the exports they use stay.
+  - **VA:** its `Ignore` is a range the script cannot read: write the six tags out. Its Doc map
+    names three files without their folder.
+  - **NC:** the same Doc map shorthand, on five files.
+  - **PG:** its Doc map lists `CONTEXT.md` and `docs/adr/*.md` before they exist: say so in prose.
+  - **MA:** five broken links (`CHANGELOG.md`, two dated documents).
+  - **LB:** `Changelog check` becomes `node scripts/check-changelog.mjs --source src --source
+    web/src`; its `scripts/check-docs.mjs` becomes a repository-only policy script without the rules
+    the canonical one now covers.
+  - **CA (decision 6):** `## Unreleased` and 32 `## x.y.z` sections take `## [x.y.z] - date`, dated
+    from their tags; `Scheme` stops overriding the body; `Changelog check` names its product paths
+    (`bin`, `native`); `check-doc-links.mjs` gives way. Confirm first that the scripts run in a `cst`
+    clone, whose Git layout they have not been tried against.
 - **Wave 4: the surroundings**: shared `AGENTS.md` blocks for the development flow and the shared
   skills, copied verbatim and linted, replacing each repository's restatements; `dev-flow` and
-  `triage-labels` as settings topics with defaults.
+  `triage-labels` as settings topics with defaults; decision 3 (private-tracker work) and decision 7
+  (security findings as draft advisories).
 - **Wave 5: third-party skills**: one `mattpocock/skills` snapshot in every repository (four were
   in use, and seven repositories had edited skill bodies by hand), installed skills kept out of
   formatters, local edits moved into settings or `AGENTS.md`, and a check that installed copies
