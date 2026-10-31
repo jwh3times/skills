@@ -426,7 +426,14 @@ waves, each a PR here or a refresh of the consumers:
   `Ask before bumping` still has no default outside `Scheme: none`, and `Next-version command`
   and `Changelog check` get theirs from Wave 3's canonical scripts.
 - **Wave 2: per-repository settings**: unmapped documents in the doc maps, stale paths, cleanup
-  lists that contradict the body, one marker per document kind.
+  lists that contradict the body, one marker per document kind. **Done 2026-10-30**, in each
+  consumer's own PR, with no change here. A scan of each repository's tracked documents against
+  its doc map now finds none missing; `LICENSE` and `CODE_OF_CONDUCT.md` are `owner-only`,
+  glossaries `frozen` and dated research `amend-only` everywhere, except AR's research records,
+  which carry current-state claims and keep their mixed rule. Cleanup lists drop the scratch-file
+  and worktree lines the body already covers, and CH's and HV's "left in place by default" openers.
+  PG and CA drop their approve-before-filing steps (decision 4). Left for later waves: the
+  `mattpocock/skills` template lines in `issue-tracker.md` (Wave 5), and decisions 3, 6 and 7.
 - **Wave 3: canonical scripts**, copied like `sync-agents.mjs`: `sync-main.mjs` (eight
   implementations), `next-version.mjs` and `check-changelog.mjs` (six each), and a docs check
   (links, and doc-map coverage) replacing three local link checkers.
