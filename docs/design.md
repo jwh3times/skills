@@ -480,7 +480,8 @@ waves, each a PR here or a refresh of the consumers:
   - **AR, CH, GT, HV, MA, VA:** copy `next-version.mjs` and `check-changelog.mjs`; call them from the
     tag and changelog workflows in place of scripts and inline checks; drop both headings. GT keeps
     its footer policy with `&&` after the default. MA's `build-info.ts` and `next-version.d.mts`
-    keep working: the exports they use stay.
+    keep working: the exports they use stay. LB and CA copy both too, though they are `cut-on-line`:
+    `check-changelog.mjs` imports `next-version.mjs`.
   - **VA:** its `Ignore` is a range the script cannot read: write the six tags out. Its Doc map
     names three files without their folder.
   - **NC:** the same Doc map shorthand, on five files.
