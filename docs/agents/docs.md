@@ -11,6 +11,13 @@
 - `skills/*/SKILL.md` — each skill's contract with the skills that call it (what one passes in, what
   the other returns or owes). **When:** a skill changes what it takes from or hands to another
   skill.
+- `skills/handoff/machine-config.md` — how the Handoffs folder reaches a machine. **When:** a
+  transport or a key of the machine config changes.
+- `settings/*.md` — the settings catalog that installs with each skill. **When:** a setting is added,
+  renamed or removed, or a default changes.
+- `skills/*/settings/*.md` — copies of `settings/` that `npm run build` generates. `frozen`.
+- `docs/agents/*.md` — this repository's own settings. **When:** a setting changes.
+- `CLAUDE.md` — `@AGENTS.md` only. **When:** never for operating context.
 - `README.md` — what is published and how to install it. **When:** a skill is added to or removed
   from `skills/`, or the install command changes.
 
