@@ -1,5 +1,9 @@
 # Workspace
 
+## AGENTS.md blocks
+
+none
+
 ## Private companion
 
 none
