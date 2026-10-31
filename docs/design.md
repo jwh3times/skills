@@ -54,9 +54,11 @@ nothing: it stops and reports the missing settings to its caller. A skill invoke
 
 **Settings format.** A repo settings file is Markdown with one `##` heading per setting, under the
 setting's fixed name; step 0 detects a missing setting by its missing heading. Hooks are
-`## Hook: <name>` sections listing steps. Helper scripts never read repo settings: the agent reads
-them and passes values as arguments (`handoff-map.mjs --key ApexRacers`). The machine config is a
-shell-style `KEY=value` file.
+`## Hook: <name>` sections listing steps. A skill's helper script never reads repo settings: the
+agent reads them and passes values as arguments (`handoff-map.mjs --key ApexRacers`). The shared
+scripts a repository copies run without an agent, so they read what they need themselves
+(`next-version.mjs` the `Version file`, `sync-agents.mjs` the `AGENTS.md blocks`). The machine
+config is a shell-style `KEY=value` file.
 
 **Settings definitions.** This repository keeps one catalog, `settings/<topic>.md`: each setting's
 name, kind, meaning, and how step 0 discovers it. A build script copies the topics a skill reads
@@ -73,7 +75,7 @@ own name (e.g. `pressgolf-release`) rather than bending the shared one.
 ```bash
 # Install, and later update: the same command
 npx skills add jwh3times/skills -s end-session -s ship -a codex --copy -y
-node scripts/sync-agents.mjs                # regenerate .claude/skills/
+node scripts/sync-agents.mjs                # regenerate .claude/skills/ and the AGENTS.md blocks
 ```
 
 Claude Code reads project skills only from `.claude/skills/` (2.1.310, tested 2026-10-26), so that
@@ -119,6 +121,7 @@ step on or off), **step** (selects one of several implementations), **hook** (re
 | Dev stack | status/stop commands and banned commands: `docker compose ps` (AR), `dev.ps1 down`, `reset-db` banned (LB), `supabase stop` (NC), `-v` banned (GT) | value |
 | Generated-config check | command; always (AR, CA, VA) or only when agent/skill sources changed (CH, LB, PG) | value + toggle |
 | Final portability check | `node scripts/repository-status.mjs --check` (AR only) | value |
+| AGENTS.md blocks | added in Wave 4, and read by `sync-agents.mjs` rather than a skill: every block by default; `none` here, which has no flow skills; `shared-skills` alone for CH until Wave 5 | value |
 
 ### `docs/agents/issue-tracker.md` — exists; extend
 
@@ -201,7 +204,8 @@ with a `ship` define the same `<type>/<issue#>-<slug>` and `Closes`/`Part of` ru
 `docs/agents/dev-flow.md`, so `Issue link` covers branch naming too. The PR body is not a setting:
 `ship` fills the repository's PR template and always adds the `Release level:` line (CH). NC's
 trigger table and PG's impact flags go under `Hook: before PR`. LB's and PG's linkage warnings are
-in the body, warn-only, using `Board` and `Private issue repository`.
+in the body, warn-only, using `Board` and `Private issue repository`. Since Wave 4 `Issue link`
+has a default, taken from the `dev-flow` topic, and its heading is written only for `none`.
 
 | Setting | Found |
 | --- | --- |
@@ -211,6 +215,13 @@ in the body, warn-only, using `Board` and `Private issue repository`.
 | PR body | template path; extra lines: `Release level:` (CH), `Fixes #NN` (PG), template checklist (AR, NC) |
 | Hook: review before PR | NC's trigger table; PG's impact flags feeding the PR body |
 | Hook: issue-linkage warnings | LB (board, Track/Gate, private-tracker leak), PG, NC (`Closes #N`) |
+
+### `docs/agents/dev-flow.md`, `triage-labels.md`, and the `agents-md` text
+
+Added in Wave 4 (see Second survey): `settings/dev-flow.md` and `settings/triage-labels.md` give
+each repository's file its shared defaults, and `settings/agents-md.md` holds the `AGENTS.md` blocks,
+with no settings file of its own. `ship` installs all three; `end-session` installs
+`triage-labels` too.
 
 ### `docs/agents/handoffs.md` — repo part of handoff/lets-go
 

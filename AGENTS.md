@@ -23,7 +23,8 @@ architecture; read it before changing how a skill is structured, configured, or 
 
 - `skills/<name>/` is what installs. Its `settings/` folder is generated from the catalog in
   `settings/` (topics named under `metadata: settings:` in the skill's frontmatter): edit
-  `settings/`, then `npm run build`.
+  `settings/`, then `npm run build`. `settings/agents-md.md` is the shared text
+  `scripts/sync-agents.mjs` writes into consumers' `AGENTS.md`; this repository takes none of it.
 - This repository installs its own skills: `.agents/skills/` holds copies of `skills/`, and
   `.claude/skills/` mirrors those. Edit only `skills/`; `npm run build` refreshes both. Its own
   settings are in `docs/agents/`.

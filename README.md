@@ -16,11 +16,15 @@ identical in every repository; what is specific to a repository lives in that re
 
 ```bash
 npx skills add jwh3times/skills -s end-session -s handoff -s lets-go -s ship -s docs-updater -a codex --copy -y
-node scripts/sync-agents.mjs   # mirror .agents/skills/ into .claude/skills/ for Claude Code
+node scripts/sync-agents.mjs   # mirror .agents/skills/ into .claude/skills/, write the AGENTS.md blocks
 ```
 
 Re-running the same command is the update. Never run `npx skills update`; see
 [docs/design.md](docs/design.md) for why, and for the architecture.
+
+`ship` brings text every repository's `AGENTS.md` shares, and `sync-agents.mjs` fails until
+`AGENTS.md` carries the marker lines of each block, or the `AGENTS.md blocks` setting leaves that
+block out: see [settings/agents-md.md](settings/agents-md.md).
 
 The CLI installs only skills. The settings' defaults also call scripts, which a repository copies by
 hand from `scripts/` here, each with its test:
