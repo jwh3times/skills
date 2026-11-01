@@ -576,8 +576,8 @@ waves, each a PR here or a refresh of the consumers:
 - **Wave 5: third-party skills**: one `mattpocock/skills` snapshot in every repository (four were
   in use, and seven repositories had edited skill bodies by hand), installed skills kept out of
   formatters, local edits moved into settings or `AGENTS.md`, and a check that installed copies
-  match the lock. This repository holds the snapshot, shared text and check; **each consumer takes
-  them in its own refresh** (below).
+  match the lock. **Done 2026-11-01**: the snapshot, shared text and check landed here, then each
+  consumer took them in its own PR (below).
 
   A survey on 2026-11-01 compared each consumer's copies against every version in upstream's history.
   No repository was on a release, and copies dated from April to October. In CH, GT, HV, LB, PG and
@@ -629,6 +629,22 @@ waves, each a PR here or a refresh of the consumers:
     instruction files, if upstream's wording does not cover it.
   - **LB, PG:** the map rule in `/wayfinder` (closed tickets only, the answer and not the delivery
     status) moves to `issue-tracker.md`, where its `Resolve` line lives.
+
+  All ten now hold the snapshot's 23 skills and the five shared ones, the same install command, and
+  the check in CI, which also proves on Linux that the hash rule accepts locks written on Windows. The
+  refreshes differed from that list in five ways:
+
+  - The first consumer PRs failed CI: `check-skills.test.mjs` read `settings/agents-md.md`, which only
+    this repository has. skills#35 reads the installed copy instead, and all ten took the fixed test.
+  - **The license notice wasn't in the plan.** The snapshot's skills are MIT, and their folders carry
+    no copy of the notice, since upstream keeps it at its root and `check-skills.mjs` would fail on an
+    extra file. NC already had a `THIRD_PARTY_NOTICES.md`, so the other nine took one in a second PR,
+    listed in the `Doc map` as `owner-only`. The shared text doesn't deliver it, so a new consumer has
+    to add its own.
+  - CH's `wayfinder:*` labels don't exist yet, and `/wayfinder` needs them on its first run there.
+  - HV needed no line about looking for standards: upstream's wording covers it.
+  - causet's `issue-tracker.md` kept its own wording and gained the snapshot's new commands and rules,
+    rather than taking the template's text.
 
 ## Unverified
 
