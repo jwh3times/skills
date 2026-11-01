@@ -87,16 +87,16 @@ does, without the up-to-date check; an unchanged skill rewrites to an identical 
 Every skill installs per project, `handoff`/`lets-go` included: helper scripts keep a fixed
 repo-root-relative path (`.agents/skills/handoff/handoff-map.mjs`), cloud sessions get a committed
 copy, and each repository keeps one lock file. The CLI installs only skills, so the shared scripts
-(`sync-agents.mjs`, `lint-agent-neutrality.mjs`, and Wave 3's `sync-main.mjs`, `next-version.mjs`,
-`check-changelog.mjs` and `check-docs.mjs`) are copied by hand; this repository holds their canonical
-copies and tests, and fixes land here first.
+(`sync-agents.mjs`, `lint-agent-neutrality.mjs`, Wave 3's `sync-main.mjs`, `next-version.mjs`,
+`check-changelog.mjs` and `check-docs.mjs`, and Wave 5's `check-skills.mjs`) are copied by hand; this
+repository holds their canonical copies and tests, and fixes land here first.
 
 **This repository installs its own skills**, so `handoff` and `lets-go` work here like anywhere
 else: `npx skills@1.7.4 add ./ -s <name> -a codex --copy -y` copies `skills/<name>` verbatim into
 `.agents/skills/<name>` and locks it with source `.`. After that, `npm run build` refreshes those
 copies (`scripts/self-install.mjs`) and the `.claude/skills/` mirror, and `npm run check` fails when
 either drifts. The lock's `computedHash` goes stale on a refresh; nothing reads it, since `update`
-is never run.
+is never run and this repository does not run `check-skills.mjs` (Wave 5).
 
 ## Settings catalog
 
@@ -352,8 +352,8 @@ per-project install and the shared scripts are recorded under Architecture.
    `Scheme` matches how that project ships: `per-merge` where every merge deploys, `cut-on-line`
    where a workflow or a maintainer cuts releases (LB, CA), `none` where nothing is versioned (NC,
    PG). The `releases.md` settings carry the differences, AR's `roll up` included.
-   **Deferred:** pruning overlapping third-party skills (a consumer-repo question, not this
-   repository's).
+   **Deferred, then settled in Wave 5:** pruning overlapping third-party skills. Every consumer now
+   takes one set, named in this repository's `shared-skills` block.
 
 ## Convergence
 
@@ -576,7 +576,59 @@ waves, each a PR here or a refresh of the consumers:
 - **Wave 5: third-party skills**: one `mattpocock/skills` snapshot in every repository (four were
   in use, and seven repositories had edited skill bodies by hand), installed skills kept out of
   formatters, local edits moved into settings or `AGENTS.md`, and a check that installed copies
-  match the lock.
+  match the lock. This repository holds the snapshot, shared text and check; **each consumer takes
+  them in its own refresh** (below).
+
+  A survey on 2026-11-01 compared each consumer's copies against every version in upstream's history.
+  No repository was on a release, and copies dated from April to October. In CH, GT, HV, LB, PG and
+  VA, about half or more of the skills matched no single upstream version. Of 41 distinct edits, some
+  were formatter damage (Prettier rewriting quotes and emphasis), some repository facts, and some the
+  same rule written separately.
+
+  Decided by the user 2026-11-01:
+
+  - **v1.3.2, pinned by commit** (`d1478fc`). A tag can move, and these skills run with full agent
+    permissions. The commit is in the install command in the `shared-skills` block, so moving every
+    repository is one change here, and `check-skills.mjs` fails each consumer until it re-installs.
+  - **The same 23 skills.** `resolving-merge-conflicts` goes: upstream removed it on 2026-09-24 and
+    nothing outside the skills names it. `/pr`, `/retro` and `/implement-spec`, which `ask-matt` now
+    routes to, stay out: `/pr` can start on its own and overlaps `ship`. The flow block says they are
+    not installed.
+  - **Edits sort three ways, and none survive in a skill.** Formatter damage goes. A repository's
+    facts move to its `AGENTS.md` or `docs/agents/`. A rule several repositories wrote joins the
+    `development-flow` block: `/ship` ending the flow (HV, CH, VA), what `/handoff` means here (CH, HV,
+    NC), a wizard not being the record of a human step (AR, GT, HV, LB, MA), and where research goes
+    (AR, CH, VA). The rest go, such as HV's refactor-on-green and its rewritten examples.
+  - **HV's wizard guard goes, and its rule stays.** HV's `template.sh` made `write_env` abort on a
+    value captured by `ask_secret`. Upstream's has no such guard, so HV's `AGENTS.md` states where
+    each kind of captured value goes, and a mistake no longer aborts the script.
+
+  `check-skills.mjs` reads the expected set from those install commands: a source they name holds
+  exactly the skills they list, at the ref they pin. A lock's `computedHash` covers bytes as the CLI
+  read them, so the same skill hashes differently from a Windows clone (CRLF) and a Fedora one (LF);
+  the check accepts either. On `main` before this wave, unedited skills' hashes matched that way, VA's
+  two grill shims aside, and edited skills' did not, except most of HV's, whose lock had been
+  re-hashed after its edits. This repository doesn't run the check: its lock's source is `.`, and its
+  hashes go stale on a refresh by design.
+
+  Each consumer's refresh, beyond taking the skills, `sync-agents.mjs` and `check-skills.mjs`:
+
+  - **All:** install the snapshot over what is there; delete `resolving-merge-conflicts`; put all of
+    `.agents/skills/` in the formatters' ignore lists in place of the five shared names; run the check
+    in CI beside `sync-agents.mjs --check`, and add it to a `Generated-config check` heading, which
+    overrides the default (CH, GT, HV, LB, MA, VA); bring the template sections of
+    `issue-tracker.md` up to the snapshot's, keeping what the repository added.
+  - **CH (decision 1):** takes the set it forked away from, adding `/implement`, `/code-review`,
+    `/triage`, `/wayfinder` and the rest. ADR-0006 is superseded; `AGENTS.md blocks` and the flow's
+    routing table give way, and it gains a `triage-labels.md`. Its `sync:agents` stops running Prettier
+    over `.agents/`. Its test layout, coverage gates and the rule that a throwaway route deploys move
+    to `AGENTS.md`.
+  - **VA:** its standards pointers and lint limits for review, both suites for `/implement`, and the
+    `private/` paths for `/research`, `/teach` and `/wizard` move to `AGENTS.md`.
+  - **HV:** the captured-value rule moves to `AGENTS.md`; so does looking for standards in its
+    instruction files, if upstream's wording does not cover it.
+  - **LB, PG:** the map rule in `/wayfinder` (closed tickets only, the answer and not the delivery
+    status) moves to `issue-tracker.md`, where its `Resolve` line lives.
 
 ## Unverified
 
@@ -639,6 +691,18 @@ help, docs and source read.
   a warning and rewrote the hash to the upstream folder's. It also overwrote a local edit in an
   existing skill folder. So once upstream moves on, a restore would deliver the new version, as
   `add` does (inferred, not run against a changed upstream). The committed `.agents/skills/` copy stays the record of what a repository runs.
+
+`skills` 1.7.4, Windows 11, 2026-11-01: `mattpocock/skills` installed into scratch projects at
+v1.3.2, by tag and by commit.
+
+- **A source can be pinned.** `add mattpocock/skills#<ref>` (or a `/tree/<tag>` URL) installs that
+  version, byte for byte apart from line endings, and records `ref` in the lock.
+  `experimental_install` then restores the pinned version, and `update -p` stays on it. So a lock
+  with a `ref` does record a version; the entry above covers a lock without one.
+- **`computedHash` depends on the machine.** With `core.autocrlf` true the CLI's clone has CRLF, and
+  it hashes those bytes; the blobs committed are LF. The same skill locks to another hash on Fedora.
+- **All 23 skills at v1.3.2 pass `lint-agent-neutrality.mjs`** and mirror cleanly through
+  `sync-agents.mjs`.
 
 `proton-drive` CLI 0.8.0, Fedora, 2026-10-26:
 

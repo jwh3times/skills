@@ -24,7 +24,9 @@ Re-running the same command is the update. Never run `npx skills update`; see
 
 `ship` brings text every repository's `AGENTS.md` shares, and `sync-agents.mjs` fails until
 `AGENTS.md` carries the marker lines of each block, or the `AGENTS.md blocks` setting leaves that
-block out: see [settings/agents-md.md](settings/agents-md.md).
+block out: see [settings/agents-md.md](settings/agents-md.md). Its `shared-skills` block also holds a
+second install command, for the `mattpocock/skills` snapshot every repository runs, pinned by commit;
+`check-skills.mjs` fails until both have run.
 
 The CLI installs only skills. The settings' defaults also call scripts, which a repository copies by
 hand from `scripts/` here, each with its test:
@@ -33,5 +35,6 @@ hand from `scripts/` here, each with its test:
 | --- | --- | --- |
 | `sync-agents.mjs`, `lint-agent-neutrality.mjs` | every repository | Mirror the skills for Claude Code and write the shared `AGENTS.md` blocks, and lint the skills for tool neutrality. |
 | `check-docs.mjs` | every repository | Checks local links, and that the `Doc map` matches the documents. |
+| `check-skills.mjs` | every repository | Fails when an installed skill differs from `skills-lock.json`, or the lock from the shared install commands. |
 | `sync-main.mjs` | a repository with a private companion | Fast-forwards the checkout and the companion to `origin/main`, both or neither. |
 | `next-version.mjs`, `check-changelog.mjs` | a repository with a changelog | Print the version the next merge mints, and verify the changelog for that merge. |

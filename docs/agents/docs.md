@@ -18,14 +18,19 @@
 - `skills/*/settings/*.md` — copies of `settings/` that `npm run build` generates. `frozen`.
 - `docs/agents/*.md` — this repository's own settings. **When:** a setting changes.
 - `CLAUDE.md` — `@AGENTS.md` only. **When:** never for operating context.
-- `README.md` — what is published and how to install it. **When:** a skill is added to or removed
-  from `skills/`, or the install command changes.
+- `README.md` — what is published, how to install it, and the scripts a repository copies. **When:**
+  a skill is added to or removed from `skills/`, an install command changes, or a canonical script is
+  added or removed.
 
 ## Drift probes
 
 - Published skills: `skills/*/SKILL.md`, against the `README.md` table and install command and the
   `docs/design.md` Status line.
-- Scripts: `scripts` in `package.json` and the files in `scripts/`, against `AGENTS.md`.
+- Scripts: `scripts` in `package.json` and the files in `scripts/`, against `AGENTS.md`, the
+  `README.md` script table, the `shared-skills` block in `settings/agents-md.md`, and the list of
+  shared scripts under Architecture in `docs/design.md`.
+- The `mattpocock/skills` snapshot: the install command in the `shared-skills` block, against the
+  version in that block and the commit and skill count in Wave 5 of `docs/design.md`.
 
 ## Docs validation
 
