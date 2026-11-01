@@ -110,7 +110,7 @@ test("refuses a block with no install command, or no block", () => {
 
 test("the catalog pins one snapshot by commit and lists the agreed set", () => {
   const text = readFileSync(
-    new URL("../settings/agents-md.md", import.meta.url),
+    new URL("../.agents/skills/ship/settings/agents-md.md", import.meta.url),
     "utf8",
   );
   const [shared, thirdParty, ...rest] = parseInstallCommands(text);
