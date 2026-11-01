@@ -522,8 +522,8 @@ waves, each a PR here or a refresh of the consumers:
 - **Wave 4: the surroundings**: shared `AGENTS.md` blocks for the development flow and the shared
   skills, replacing each repository's restatements; `dev-flow` and `triage-labels` as settings topics
   with defaults; decision 3 (private-tracker work) and decision 7 (security findings as draft
-  advisories). Topics, blocks and script landed here first; **each consumer's refresh is still to
-  come** (below).
+  advisories). **Done 2026-11-01, except decision 7's move**: topics, blocks and script landed here,
+  then each consumer took them in its own PR (below). The move waits on the user naming the issues.
 
   Decided by the user 2026-10-31:
 
@@ -559,7 +559,20 @@ waves, each a PR here or a refresh of the consumers:
   - **All with a `triage-labels.md`:** reduce it to a pointer and any `Extra labels`.
   - **NC:** the public-issue rule goes from `dev-flow.md` and `issue-tracker.md`.
   - **AR:** `AGENTS.md` still lists security findings among what the companion holds.
-  - **LB, MA, AR:** the findings move, once the user names them.
+  - **LB, MA, AR:** the findings move, once the user names them. Not started.
+
+  Nine now hold both blocks and CH the `shared-skills` block, and `--check` holds them to this
+  repository's text. The refreshes differed from that list in four ways:
+
+  - HV carried the same rule as NC, filing a public issue for private work, so it went there too.
+  - LB's `web/.prettierignore` gained `sync-agents.mjs` and its test: `docs:check` reads them through
+    `../scripts`, and a canonical copy isn't reformatted to one repository's style.
+  - CH's note on Next.js said no tool writes into `AGENTS.md`, which stopped being true. It now names
+    the marked block as the one exception.
+  - causet's `aa8ce26` landed with `cst merge --compact`, with a receipt and a causet#19 entry, but
+    without `-m`, so its subject is the default `Compact merge chore/373-shared-flow-blocks`, with no
+    PR number. Changing it would take the force-push that repository forbids, so it stays.
+
 - **Wave 5: third-party skills**: one `mattpocock/skills` snapshot in every repository (four were
   in use, and seven repositories had edited skill bodies by hand), installed skills kept out of
   formatters, local edits moved into settings or `AGENTS.md`, and a check that installed copies
