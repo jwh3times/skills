@@ -522,8 +522,8 @@ waves, each a PR here or a refresh of the consumers:
 - **Wave 4: the surroundings**: shared `AGENTS.md` blocks for the development flow and the shared
   skills, replacing each repository's restatements; `dev-flow` and `triage-labels` as settings topics
   with defaults; decision 3 (private-tracker work) and decision 7 (security findings as draft
-  advisories). **Done 2026-11-01, except decision 7's move**: topics, blocks and script landed here,
-  then each consumer took them in its own PR (below). The move waits on the user naming the issues.
+  advisories). **Done 2026-11-02**: topics, blocks and script landed here, then each consumer took
+  them in its own PR (below). Decision 7's move ended with nothing to move.
 
   Decided by the user 2026-10-31:
 
@@ -559,7 +559,8 @@ waves, each a PR here or a refresh of the consumers:
   - **All with a `triage-labels.md`:** reduce it to a pointer and any `Extra labels`.
   - **NC:** the public-issue rule goes from `dev-flow.md` and `issue-tracker.md`.
   - **AR:** `AGENTS.md` still lists security findings among what the companion holds.
-  - **LB, MA, AR:** the findings move, once the user names them. Not started.
+  - **LB, MA, AR:** the findings move. On 2026-11-02 the user went through the private issues, and none
+    was an unpatched finding to move. Accepted risks stay private, and no advisory was created.
 
   Nine now hold both blocks and CH the `shared-skills` block, and `--check` holds them to this
   repository's text. The refreshes differed from that list in four ways:
