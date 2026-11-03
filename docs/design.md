@@ -356,6 +356,12 @@ per-project install and the shared scripts are recorded under Architecture.
    `Scheme` matches how that project ships: `per-merge` where every merge deploys, `cut-on-line`
    where a workflow or a maintainer cuts releases (LB, CA), `none` where nothing is versioned (NC,
    PG). The `releases.md` settings carry the differences, AR's `roll up` included.
+   **Amended 2026-11-03:** every consumer is versioned. LB moves to `per-merge`, cutting `0.28.0`;
+   NC moves to `per-merge` from `1.0.0`, and each merge also applies its migrations and deploys;
+   PG takes CA's model, `cut-on-line` with deliberate releases a maintainer tags, from `1.0.0`.
+   Each repository's own issue tracks its move (LB#696, NC#281, PG#245). `none` stays in the
+   catalog for repositories with nothing to release, such as this one. The catalog and `ship` need
+   no change.
    **Deferred, then settled in Wave 5:** pruning overlapping third-party skills. Every consumer now
    takes one set, named in this repository's `shared-skills` block.
 
