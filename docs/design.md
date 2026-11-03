@@ -300,6 +300,10 @@ the best version, which keeps the catalog above short.
 - Check the `gh` token's `project` scope before touching the board (VA); otherwise board writes fail
   silently.
 - List the private follow-up repo explicitly with `-R` (HV).
+- The report is a fixed template in the body (decided 2026-11-02, skills#38), so every repository
+  reports the same things. Its status table has a column for each repository the session wrote to
+  and its companion. Security rows are counts only, and an alert API that is off or refuses the
+  token prints `disabled` or `not readable`, never `0`.
 - No `--limit 20` on merged-PR lookups (MA misses older branches).
 - Finished branches by PR, not `git branch --merged` (AR #449), after `git fetch --prune origin`,
   with PR fields read into named variables (AR #452). One rule serves both merge styles, so it is
