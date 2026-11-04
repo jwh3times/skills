@@ -419,7 +419,12 @@ Decided by the user on 2026-10-30:
    the body.
 7. **Security findings are draft advisories in every repository**; LB and MA move their open
    findings out of private issues.
-8. **Board fields** are not converged now: filed as #24.
+8. **Board fields** are not converged now: filed as #24. Decided on 2026-11-04: only blocking
+   converges. A blocker that is another issue is a native `blocked_by` edge on every board, and a
+   text field (AR, GT, VA) holds only blockers outside the project; VA also keeps a blocker on its
+   other tracker there, so no edge links a public issue to a private one (AR#487, GT#461, VA#527).
+   Status and Gate options keep each board's own names: the skills read them from settings, and
+   renaming them would mean manual UI edits on nine boards for no change in behavior.
 
 The survey also found bugs in the bodies that affect every repository, and the work runs in
 waves, each a PR here or a refresh of the consumers:
