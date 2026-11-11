@@ -6,7 +6,9 @@ repository and in ApexRacers (pilot step 2, apexracers#458, 2026-10-27), then in
 caitlyn-holland-vip (#242), holland-vip (#214) and GuardianTracker (#440), all 2026-10-27, and
 PressGolf (#182), Nearcited (#237), LeaseBook (#637), magic-agenda (#556) and
 valleys-at-ashebrook-hoa (#477), 2026-10-27/28: every consumer. On 2026-10-28 every consumer
-converged on the settings defaults (#16, see Convergence) and took #17.
+converged on the settings defaults (#16, see Convergence) and took #17. TirelessInvest joined
+2026-11-10 (TirelessInvest#1), after the surveys, already on `skills` 1.8.0 and the version 2 lock
+(TirelessInvest#2).
 
 ## Goal
 
@@ -102,7 +104,8 @@ is never run and this repository does not run `check-skills.mjs` (Wave 5).
 
 Values come from reading every copy on 2026-10-26. Abbreviations: AR apexracers, CA causet, CH
 caitlyn-holland-vip, GT guardiantracker, HV holland-vip, LB leasebook, MA magic-agenda, NC Nearcited,
-PG PressGolf, VA valleys-at-ashebrook-hoa. Kind: **value** (command, path, name), **toggle** (a shared
+PG PressGolf, VA valleys-at-ashebrook-hoa; TI TirelessInvest joined after this survey and has no
+column in it. Kind: **value** (command, path, name), **toggle** (a shared
 step on or off), **step** (selects one of several implementations), **hook** (repo-only steps).
 
 ### `docs/agents/workspace.md` — new; read by every skill
