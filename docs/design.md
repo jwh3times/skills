@@ -666,6 +666,17 @@ waves, each a PR here or a refresh of the consumers:
   - causet's `issue-tracker.md` kept its own wording and gained the snapshot's new commands and rules,
     rather than taking the template's text.
 
+  The version 2 check (#42) reached the consumers on 2026-11-10, each re-running both install
+  commands in full with `skills@1.8.0`: apexracers#502, LeaseBook#749, caitlyn-holland-vip#272,
+  causet#433 (landed with `cst merge --compact`), GuardianTracker#492, holland-vip#240,
+  magic-agenda#657, Nearcited#313, PressGolf#306 and valleys-at-ashebrook-hoa#569. All ten now hold a
+  version 2 lock with no empty hash, and `check-skills.mjs` and its test byte for byte as here; TI
+  needed nothing, having installed on 1.8.0. The refreshes differed from that in one way:
+
+  - NC's Version workflow had failed on a Dependabot merge (`remote: fatal error in commit_refs`,
+    transient), leaving that merge untagged and undeployed. It was rerun, with the owner's approval,
+    before the refresh.
+
 ## Unverified
 
 None: the last two were settled on 2026-10-29 (see Verified).
