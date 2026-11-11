@@ -625,7 +625,8 @@ waves, each a PR here or a refresh of the consumers:
   the check accepts either. On `main` before this wave, unedited skills' hashes matched that way, VA's
   two grill shims aside, and edited skills' did not, except most of HV's, whose lock had been
   re-hashed after its edits. This repository doesn't run the check: its lock's source is `.`, and its
-  hashes go stale on a refresh by design.
+  hashes go stale on a refresh by design. CLI 1.8.0 writes a version 2 lock whose hash ignores line
+  endings (see Verified); the check reads both versions, so an install needs no pinned CLI version.
 
   Each consumer's refresh, beyond taking the skills, `sync-agents.mjs` and `check-skills.mjs`:
 
@@ -735,6 +736,21 @@ v1.3.2, by tag and by commit.
   it hashes those bytes; the blobs committed are LF. The same skill locks to another hash on Fedora.
 - **All 23 skills at v1.3.2 pass `lint-agent-neutrality.mjs`** and mirror cleanly through
   `sync-agents.mjs`.
+
+`skills` 1.8.0, Windows 11 (`core.autocrlf` true), 2026-11-10: the shared install commands run into
+a scratch project, and into a copy of apexracers' `.agents/skills/` and lock; the package's README
+and source read.
+
+- **The lock is version 2, with a new `computedHash`.** The README's "Lock File Content Hash"
+  publishes the rule and test vectors: CRLF becomes LF in a file with no NUL byte, `metadata.json`
+  and `.git`, `__pycache__` and `__pypackages__` are left out (`node_modules` no longer is), paths
+  sort by UTF-8 bytes, and each file feeds path, NUL, byte length, NUL, content. The same skill now
+  hashes the same on Windows and Fedora. Entries also gain `installMode: "copy"`.
+- **Any write upgrades a version 1 lock whole.** An entry whose folder still matches its old hash,
+  byte for byte, gets the new hash; every other entry gets `""`. On a Windows checkout of a lock
+  written from LF bytes nothing matches, so installing one skill emptied the other 27 hashes in the
+  apexracers copy. Running both install commands in full filled them all, and `check-skills.mjs`,
+  which now reads version 2, passed. It reports an empty hash as needing the install.
 
 `proton-drive` CLI 0.8.0, Fedora, 2026-10-26:
 
