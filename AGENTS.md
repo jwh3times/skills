@@ -2,7 +2,8 @@
 
 Source for the agent skills published as `jwh3times/skills` and installed into the consumer
 repositories under `~/dev/`: apexracers, caitlyn-holland-vip, causet, guardiantracker, holland-vip,
-leasebook, magic-agenda, Nearcited, PressGolf, valleys-at-ashebrook-hoa. `docs/design.md` is the
+leasebook, magic-agenda, Nearcited, PressGolf, TirelessInvest, valleys-at-ashebrook-hoa. A new
+consumer joins this list and the Status line of `docs/design.md`. `docs/design.md` is the
 architecture; read it before changing how a skill is structured, configured, or installed.
 
 ## Skill bodies
