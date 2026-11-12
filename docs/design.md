@@ -8,12 +8,13 @@ PressGolf (#182), Nearcited (#237), LeaseBook (#637), magic-agenda (#556) and
 valleys-at-ashebrook-hoa (#477), 2026-10-27/28: every consumer. On 2026-10-28 every consumer
 converged on the settings defaults (#16, see Convergence) and took #17. TirelessInvest joined
 2026-11-10 (TirelessInvest#1), after the surveys, already on `skills` 1.8.0 and the version 2 lock
-(TirelessInvest#2).
+(TirelessInvest#2). `what-next` written 2026-11-12 (see the `issue-tracker.md` catalog) and
+installed here, joining the shared install command, which each consumer takes at its next refresh.
 
 ## Goal
 
-Publish the skills the user wrote — `ship`, `end-session`, `handoff`, `lets-go` and `docs-updater` —
-from this one repository, installable into any repository. Installing adapts a skill
+Publish the skills the user wrote — `ship`, `end-session`, `handoff`, `lets-go`, `docs-updater` and
+`what-next` — from this one repository, installable into any repository. Installing adapts a skill
 to its repository, but **by writing settings, not by editing the skill**: the skill body stays
 identical everywhere so fixes flow to every repository by re-running the install (see Install and update).
 
@@ -108,7 +109,7 @@ PG PressGolf, VA valleys-at-ashebrook-hoa; TI TirelessInvest joined after this s
 column in it. Kind: **value** (command, path, name), **toggle** (a shared
 step on or off), **step** (selects one of several implementations), **hook** (repo-only steps).
 
-### `docs/agents/workspace.md` — new; read by every skill
+### `docs/agents/workspace.md` — new; read by every skill but `what-next`
 
 | Setting | Found | Kind |
 | --- | --- | --- |
@@ -136,6 +137,18 @@ step on or off), **step** (selects one of several implementations), **hook** (re
 | Board fields and values | AR Status (Todo/In Progress/Blocked/Parked/Done) + Blocked by; HV `Deferred` for Parked; CH, CA Status/Gate/Area; GT Status/Blocked By/Chain/Order/Gate/ADR/Triage; LB Track/Gate + a Status its board's workflows set; MA Phase/Priority/Size/Gate by hand + a Status its board's workflows set (one private board holds both repositories' issues; it auto-adds only public ones); NC Status/Stage/Gate; VA Status/Gate/Area/Next Action/Blocking Item |
 | New work | an issue (the shared `end-session`'s behavior before this setting); a board draft item until the work is committed to (GT, ADR 0024) |
 | Security findings | draft repository advisory (AR — plus a draft board item — CH, CA, HV); private issue labelled `security` (LB); private doc (GT `security-limitations.md`, MA a private issue plus the register in `private/README.md`, VA tracker + wiki); `SECURITY.md` (PG) |
+
+**`what-next`** (2026-11-12, the user's choices) reads this topic, `triage-labels` and the
+`dev-flow` Procedure to rank open work and name its route. It is read-only (tracker problems go in
+its report, for the user or `end-session`), model-invocable since it writes nothing, scoped to one
+repository and its private tracker, and in the shared install set. Ranking is the one fact the
+existing settings did not state: the boards rank by a `Priority` field (AR, GT, LB, MA, NC, PG,
+TI), manual order (AR, GT, MA), `Rank` (LB) or `Stage` (NC), and CH, HV and VA by none of them. So
+**`Priority order`** names the ranking keys, `none` without a board; ties go to the issue that
+unblocks the most open issues, then the oldest. At its refresh, each consumer answers `Priority
+order` on the first run, and adds `what-next` wherever it names the shared five: the `Doc map`
+entry that marks them `frozen` (all but CA), and the documents that list them (CH's and HV's ADRs,
+NC's `THIRD_PARTY_NOTICES.md`, MA's and VA's settings intros).
 
 Labels are their own topic since Wave 4 (`settings/triage-labels.md`). When surveyed, they stayed in
 `triage-labels.md`, or in `issue-tracker.md`'s own section where a repository kept them there (CH).
@@ -224,7 +237,7 @@ has a default, taken from the `dev-flow` topic, and its heading is written only 
 Added in Wave 4 (see Second survey): `settings/dev-flow.md` and `settings/triage-labels.md` give
 each repository's file its shared defaults, and `settings/agents-md.md` holds the `AGENTS.md` blocks,
 with no settings file of its own. `ship` installs all three; `end-session` installs
-`triage-labels` too.
+`triage-labels` too, and `what-next` both `dev-flow` and `triage-labels`.
 
 ### `docs/agents/handoffs.md` — repo part of handoff/lets-go
 
