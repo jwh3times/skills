@@ -25,6 +25,11 @@
       "source": ".",
       "sourceType": "local",
       "computedHash": "d2041c922f119cdd16f9f8e865fc12961f38d757121df42dc1fca3181aba1090"
+    },
+    "what-next": {
+      "source": ".",
+      "sourceType": "local",
+      "computedHash": "9a6a1aaee1afdb904aec1bc761f518a3be6a6693973685783fba12036738eb0b"
     }
   }
 }
