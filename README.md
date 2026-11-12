@@ -11,7 +11,7 @@ identical in every repository; what is specific to a repository lives in that re
 | `lets-go` | Resumes the active handoff on the other machine. Needs `handoff` installed beside it. |
 | `ship` | Takes a finished branch to an open PR: release level, docs, changelog, human follow-ups, fast checks. |
 | `docs-updater` | Finds where the docs and the code disagree and fixes the docs, or reports it in `check` mode. `ship` and `end-session` run it, so install it beside them. |
-| `what-next` | Ranks the open work across the trackers and the board and recommends what to pick up next. Read-only. |
+| `what-next` | Ranks the open work across the trackers and the board, puts an active handoff first, and recommends what to pick up next. Read-only. Needs `handoff` installed beside it. |
 
 ## Install, and later update
 

@@ -145,10 +145,23 @@ repository and its private tracker, and in the shared install set. Ranking is th
 existing settings did not state: the boards rank by a `Priority` field (AR, GT, LB, MA, NC, PG,
 TI), manual order (AR, GT, MA), `Rank` (LB) or `Stage` (NC), and CH, HV and VA by none of them. So
 **`Priority order`** names the ranking keys, `none` without a board; ties go to the issue that
-unblocks the most open issues, then the oldest. At its refresh, each consumer answers `Priority
-order` on the first run, and adds `what-next` wherever it names the shared five: the `Doc map`
-entry that marks them `frozen` (all but CA), and the documents that list them (CH's and HV's ADRs,
-NC's `THIRD_PARTY_NOTICES.md`, MA's and VA's settings intros).
+unblocks the most open issues, then the oldest.
+
+It reached every consumer on 2026-11-12: apexracers#520, caitlyn-holland-vip#274, causet#439
+(landed with `cst merge --compact`), GuardianTracker#497, holland-vip#242, LeaseBook#768,
+magic-agenda#660, Nearcited#317, PressGolf#321, TirelessInvest#37 and
+valleys-at-ashebrook-hoa#578. `Priority order` is `Priority`, then `board order` (AR, CA, GT, MA,
+NC), `Priority`, then `Rank` (LB), `Priority` alone (PG, TI), and `board order` (CH, HV, VA: the
+user chose the manual order over `none`). Each names `what-next` in its `Doc map` and, with the
+user's approval, its `THIRD_PARTY_NOTICES.md`. The ADRs that record the shared skills (CH 0011, HV
+0005, GT 0025, VA 0029) are `frozen` and still list five: their decisions cover the sixth. PG's
+refresh waited on PressGolf#322, since a new Expo patch release had turned its `expo-doctor` step
+red on every branch.
+
+A follow-up the same day made it read the active handoff (`handoffs` topic, `Map key`) through
+`handoff-map.mjs get`, as `lets-go` does: a handoff waiting to be resumed heads **Finish first**,
+routed to `/lets-go`. It never sets up the machine config, which writes a file, and the map does
+not record which machine wrote a handoff, so the report names the document for the user to judge.
 
 Labels are their own topic since Wave 4 (`settings/triage-labels.md`). When surveyed, they stayed in
 `triage-labels.md`, or in `issue-tracker.md`'s own section where a repository kept them there (CH).
@@ -237,7 +250,7 @@ has a default, taken from the `dev-flow` topic, and its heading is written only 
 Added in Wave 4 (see Second survey): `settings/dev-flow.md` and `settings/triage-labels.md` give
 each repository's file its shared defaults, and `settings/agents-md.md` holds the `AGENTS.md` blocks,
 with no settings file of its own. `ship` installs all three; `end-session` installs
-`triage-labels` too, and `what-next` both `dev-flow` and `triage-labels`.
+`triage-labels` too, and `what-next` `dev-flow`, `triage-labels` and `handoffs`.
 
 ### `docs/agents/handoffs.md` — repo part of handoff/lets-go
 
