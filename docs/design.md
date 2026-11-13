@@ -162,6 +162,12 @@ A follow-up the same day made it read the active handoff (`handoffs` topic, `Map
 `handoff-map.mjs get`, as `lets-go` does: a handoff waiting to be resumed heads **Finish first**,
 routed to `/lets-go`. It never sets up the machine config, which writes a file, and the map does
 not record which machine wrote a handoff, so the report names the document for the user to judge.
+That change (#47) reached every consumer the same day: apexracers#521, caitlyn-holland-vip#275,
+causet#444 (`cst merge --compact`), GuardianTracker#498, holland-vip#243, LeaseBook#769,
+magic-agenda#661, Nearcited#318, PressGolf#328, TirelessInvest#45 and
+valleys-at-ashebrook-hoa#579. No settings changed, since every consumer already had `Map key`.
+Between the two rollouts, causet and TI changed release schemes (see Decision 8), so both needed a
+changelog section the first rollout did not.
 
 Labels are their own topic since Wave 4 (`settings/triage-labels.md`). When surveyed, they stayed in
 `triage-labels.md`, or in `issue-tracker.md`'s own section where a repository kept them there (CH).
@@ -391,6 +397,10 @@ per-project install and the shared scripts are recorded under Architecture.
    Each repository's own issue tracks its move (LB#696, NC#281, PG#245). `none` stays in the
    catalog for repositories with nothing to release, such as this one. The catalog and `ship` need
    no change.
+   **Amended 2026-11-12:** CA moves to `per-merge` (causet#443, its ADR-0048): every landing is a
+   prerelease version, and one dispatch promotes a version to stable. TI, which joined with
+   `none`, moves to `per-merge` with `roll up` from `0.1.0`. PG stays `cut-on-line`, with CI
+   tagging a release once its merge passes (PG#311). Again the catalog and `ship` need no change.
    **Deferred, then settled in Wave 5:** pruning overlapping third-party skills. Every consumer now
    takes one set, named in this repository's `shared-skills` block.
 
