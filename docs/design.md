@@ -91,8 +91,9 @@ Every skill installs per project, `handoff`/`lets-go` included: helper scripts k
 repo-root-relative path (`.agents/skills/handoff/handoff-map.mjs`), cloud sessions get a committed
 copy, and each repository keeps one lock file. The CLI installs only skills, so the shared scripts
 (`sync-agents.mjs`, `lint-agent-neutrality.mjs`, Wave 3's `sync-main.mjs`, `next-version.mjs`,
-`check-changelog.mjs` and `check-docs.mjs`, and Wave 5's `check-skills.mjs`) are copied by hand; this
-repository holds their canonical copies and tests, and fixes land here first.
+`check-changelog.mjs` and `check-docs.mjs`, Wave 5's `check-skills.mjs`, and Decision 9's
+`stamp-changelog.mjs`) are copied by hand; this repository holds their canonical copies and tests,
+and fixes land here first.
 
 **This repository installs its own skills**, so `handoff` and `lets-go` work here like anywhere
 else: `npx skills@1.7.4 add ./ -s <name> -a codex --copy -y` copies `skills/<name>` verbatim into
