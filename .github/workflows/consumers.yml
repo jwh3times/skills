@@ -1,0 +1,175 @@
+name: Consumers
+
+# Keeps the consumer repositories (consumers.json) current with this repository's main.
+#
+# The drift job runs `scripts/consumer-drift.mjs`, which reads each consumer's main through the API
+# and compares its shared skills, canonical scripts and snapshot pin with this checkout. It keeps
+# one open issue labelled `consumer-drift` holding the report, and closes it once every consumer is
+# current. The consumers are public, so `GITHUB_TOKEN` reads them.
+#
+# The sync job then updates each behind consumer marked `sync: true`: it runs
+# `scripts/consumer-sync.mjs` in a checkout of that consumer's main and pushes the result to the
+# bot-owned `chore/take-skills` branch there, opening a pull request if none is open. The consumer's
+# own CI checks it, and its maintainer merges it. Only consumers on `Scheme: stamp-on-tag` take
+# `sync: true`, since there a pull request needs no changelog edit: the tag workflow writes its
+# section from the PR title.
+#
+# The sync job pushes with a token from the release GitHub App (installed on each synced consumer,
+# with Contents and Pull requests write), so the pull request starts the consumer's CI, which a
+# `GITHUB_TOKEN` push would not. The App's client ID is the RELEASE_APP_CLIENT_ID variable here and
+# its private key the RELEASE_APP_PRIVATE_KEY secret; until the variable is set, the job is skipped.
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "23 6 * * *" # daily, so a consumer's own merges close the issue too
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A newer run reads a newer main, so it replaces one still running.
+concurrency:
+  group: consumers
+  cancel-in-progress: true
+
+jobs:
+  drift:
+    name: Report consumer drift
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    outputs:
+      targets: ${{ steps.report.outputs.targets }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # the report dates each stale copy from this repository's history
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+
+      - name: Compare every consumer with main
+        id: report
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/consumer-drift.mjs --json "$RUNNER_TEMP/drift.json" --markdown "$RUNNER_TEMP/drift.md"
+          cat "$RUNNER_TEMP/drift.md" >> "$GITHUB_STEP_SUMMARY"
+          echo "targets=$(jq -c .syncTargets "$RUNNER_TEMP/drift.json")" >> "$GITHUB_OUTPUT"
+          echo "behind=$(jq '[.results[] | select(.error or ((.items // []) | length > 0))] | length' "$RUNNER_TEMP/drift.json")" >> "$GITHUB_OUTPUT"
+
+      - name: Update the drift issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BEHIND: ${{ steps.report.outputs.behind }}
+        run: |
+          gh label create consumer-drift --color BFD4F2 \
+            --description "A consumer is behind this repository's main" 2>/dev/null || true
+          number=$(gh issue list --label consumer-drift --state open --json number --jq '.[0].number // empty')
+          if [ "$BEHIND" -gt 0 ]; then
+            if [ -n "$number" ]; then
+              gh issue edit "$number" --body-file "$RUNNER_TEMP/drift.md"
+            else
+              gh issue create --title "Consumers behind main" --label consumer-drift \
+                --body-file "$RUNNER_TEMP/drift.md"
+            fi
+          elif [ -n "$number" ]; then
+            gh issue comment "$number" --body "Every consumer matches main at ${GITHUB_SHA::7}."
+            gh issue close "$number"
+          fi
+
+  sync:
+    name: Sync ${{ matrix.target.repo }}
+    needs: drift
+    if: needs.drift.outputs.targets != '[]' && vars.RELEASE_APP_CLIENT_ID != ''
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(needs.drift.outputs.targets) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: skills
+
+      - name: Create release App token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ matrix.target.name }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ matrix.target.repo }}
+          ref: main
+          path: consumer
+          token: ${{ steps.app-token.outputs.token }}
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+
+      - name: Take the skills and scripts
+        run: node skills/scripts/consumer-sync.mjs consumer
+
+      - name: Push the branch and open or update the pull request
+        working-directory: consumer
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+          REPO: ${{ matrix.target.repo }}
+          BRANCH: chore/take-skills
+          TITLE: "chore: take the latest shared skills"
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "$REPO already matches main; nothing to push." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          bot="${APP_SLUG}[bot]"
+          bot_id=$(gh api "/users/${bot}" --jq .id)
+          git config user.name "$bot"
+          git config user.email "${bot_id}+${bot}@users.noreply.github.com"
+
+          git switch -q -c "$BRANCH"
+          git add -A
+          git commit -q -m "$TITLE" -m "From ${GITHUB_REPOSITORY}@${GITHUB_SHA::7}, by its Consumers workflow."
+
+          # The branch is rewritten from main each time; skip the push when it already holds this
+          # exact tree, so an unchanged day does not rerun the consumer's CI.
+          if git fetch -q origin "$BRANCH" 2>/dev/null &&
+            [ "$(git rev-parse 'HEAD^{tree}')" = "$(git rev-parse 'FETCH_HEAD^{tree}')" ]; then
+            echo "$REPO: $BRANCH is already up to date." >> "$GITHUB_STEP_SUMMARY"
+          else
+            git push -q --force origin "HEAD:refs/heads/${BRANCH}"
+          fi
+
+          {
+            echo "Takes \`${GITHUB_REPOSITORY}\` main at ${GITHUB_SHA::7}: the shared skills, the canonical"
+            echo "scripts this repository carries, and what \`node scripts/sync-agents.mjs\` regenerates."
+            echo
+            echo '```'
+            git diff --stat HEAD~1 HEAD | tail -n 25
+            echo '```'
+            echo
+            echo "Opened by the Consumers workflow in ${GITHUB_REPOSITORY}, which rewrites this branch from"
+            echo "main whenever that repository moves; push nothing to it. It needs no changelog fragment:"
+            echo "the Version workflow writes this merge's section from the PR title."
+          } > "$RUNNER_TEMP/body.md"
+
+          number=$(gh pr list -R "$REPO" --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$number" ]; then
+            gh pr edit "$number" -R "$REPO" --body-file "$RUNNER_TEMP/body.md"
+          else
+            gh pr create -R "$REPO" --base main --head "$BRANCH" --title "$TITLE" \
+              --body-file "$RUNNER_TEMP/body.md"
+          fi
+          echo "$REPO: pull request updated." >> "$GITHUB_STEP_SUMMARY"

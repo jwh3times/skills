@@ -1,0 +1,15 @@
+{
+  "consumers": [
+    { "repo": "jwh3times/apexracers" },
+    { "repo": "jwh3times/caitlyn-holland-vip", "sync": true },
+    { "repo": "jwh3times/causet" },
+    { "repo": "jwh3times/GuardianTracker" },
+    { "repo": "jwh3times/holland-vip", "sync": true },
+    { "repo": "jwh3times/LeaseBook" },
+    { "repo": "jwh3times/magic-agenda" },
+    { "repo": "jwh3times/Nearcited" },
+    { "repo": "jwh3times/PressGolf" },
+    { "repo": "jwh3times/TirelessInvest" },
+    { "repo": "jwh3times/valleys-at-ashebrook-hoa" }
+  ]
+}
