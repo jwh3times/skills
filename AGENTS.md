@@ -30,9 +30,9 @@ architecture; read it before changing how a skill is structured, configured, or 
   `.claude/skills/` mirrors those. Edit only `skills/`; `npm run build` refreshes both. Its own
   settings are in `docs/agents/`.
 - `scripts/sync-agents.mjs`, `lint-agent-neutrality.mjs`, `sync-main.mjs`, `next-version.mjs`,
-  `check-changelog.mjs`, `check-docs.mjs` and `check-skills.mjs` are the canonical copies of the
-  scripts the consumer repositories carry, each with its test. Fix them here first; consumers take
-  the new copy.
+  `check-changelog.mjs`, `stamp-changelog.mjs`, `check-docs.mjs` and `check-skills.mjs` are the
+  canonical copies of the scripts the consumer repositories carry, each with its test. Fix them
+  here first; consumers take the new copy.
 - `settings/agents-md.md` also holds the `mattpocock/skills` snapshot every consumer installs: its
   commit and skill list are in the `shared-skills` block's install command.
 - A skill derived from someone else's keeps their license notice inside its own folder (as

@@ -415,12 +415,17 @@ per-project install and the shared scripts are recorded under Architecture.
      `CHANGELOG.md`, so two open PRs cannot conflict. A `merge=union` driver was rejected:
      GitHub's merge button and Update branch ignore custom drivers.
    - **The tag workflow stamps.** On a push to `main` it starts from the tip, and for each
-     untagged merge in order it takes the fragments that merge added, writes them as
-     `## [x.y.z] - date` (the version from `next-version.mjs`, unchanged), deletes them, commits
-     `chore(release): vX.Y.Z [skip ci]`, tags that commit and pushes. One version per merge, so
-     `/land` can still confirm the tag a merge got. A merge with no fragment (a bot's, or a
-     docs-only change) gets a one-bullet section from its PR title, so every tag has a section
-     and `Skipped tags` does not apply.
+     untagged merge in order it takes the fragments that merge added and writes them as
+     `## [x.y.z] - date` (the version from `next-version.mjs`, unchanged). One commit,
+     `chore(release): vX.Y.Z[, ...] [skip ci]`, holds every new section and deletes the
+     fragments; each tag points at its merge commit, and one atomic push carries both. One
+     version per merge, so `/land` can still confirm the tag a merge got. A merge with no fragment
+     (a bot's, or a docs-only change) gets a one-bullet section from its PR title, so every tag has
+     a section and `Skipped tags` does not apply. **Amended 2026-11-18, while building it:** the
+     tag was to point at the stamp commit, but when merges land together the stamp commits follow
+     all of them, so a version would include a later PR's code. A tag on the merge commit is
+     exactly what that merge deployed; its tree holds the fragment, and the release notes carry the
+     section.
    - **One GitHub App pushes the stamp.** `GITHUB_TOKEN` cannot be a ruleset bypass actor, so a
      user-owned App is installed on each consumer, added as a bypass actor on its `main` ruleset,
      with its key as a repository secret: a human step per consumer. App-token pushes trigger
@@ -430,10 +435,20 @@ per-project install and the shared scripts are recorded under Architecture.
    - **Rollout.** HV pilots (a plain tag workflow, a Pages deploy to prove `[skip ci]`, the ADR it
      supersedes), then CH, then the rest, with CA (prereleases) and NC (merge-time migrations)
      last.
-   - **To build here:** the `stamp-on-tag` entry in `settings/releases.md`; `ship` writing
-     fragments; `check-changelog.mjs` requiring a fragment where `--source` paths changed and
-     rejecting edits to `CHANGELOG.md` on a branch; a new canonical `stamp-changelog.mjs` with its
-     test, which the tag workflow calls; `docs-updater` and `end-session` reading `changelog.d/`.
+   - **Built here (2026-11-18):** the `stamp-on-tag` entry in `settings/releases.md`; `ship`
+     writing fragments; `check-changelog.mjs` validating fragments, requiring one where `--source`
+     paths changed, and rejecting a branch's version sections and `Unreleased` edits (prose such
+     as the policy at the top may change, so the move itself can edit it); the canonical
+     `stamp-changelog.mjs` with its test, whose header gives the workflow's push; `docs-updater`
+     and `end-session` reading `changelog.d/`. Each consumer's move writes its own tag workflow.
+     A review before the first ship found seven bugs, each now covered by a test: fragment names
+     read as pathspecs or quoted as non-ASCII, renames hiding an added fragment, a squash body
+     quoting a stamp commit, edits to another merge's pending fragment lost (the check now
+     rejects them), and one malformed fragment blocking every later release (its lines now
+     release under `Changed`, with a warning). Each consumer's move also checks: rebase merging
+     off, since every first-parent commit is a release; a never-cancelling `concurrency` group,
+     with only a non-fast-forward rejection treated as benign; the newest three-part tag on the
+     last merge before the move; and the move PR emptying `Unreleased` into a fragment.
 
 ## Convergence
 
