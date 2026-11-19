@@ -290,7 +290,7 @@ test("a fragment path is a direct child of changelog.d, and never its README", (
 });
 
 test("a fragment may start with a byte-order mark", () => {
-  assert.deepEqual(parseFragment("﻿### Added\n- A.\n").errors, []);
+  assert.deepEqual(parseFragment("\uFEFF### Added\n- A.\n").errors, []);
 });
 
 test("stamp-on-tag lets a branch empty Unreleased, and rejects edits to another merge's fragment", () => {

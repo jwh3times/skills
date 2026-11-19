@@ -163,7 +163,7 @@ export function parseFragment(text) {
   const categories = new Map();
   const errors = [];
   let current = null;
-  const normalized = text.replace(/^﻿/, "").replace(/\r\n?/g, "\n");
+  const normalized = text.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
   for (const [index, line] of normalized.split("\n").entries()) {
     const heading = /^### (\S.*?)\s*$/.exec(line);
     if (heading) {
