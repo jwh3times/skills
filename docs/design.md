@@ -403,6 +403,37 @@ per-project install and the shared scripts are recorded under Architecture.
    tagging a release once its merge passes (PG#311). Again the catalog and `ship` need no change.
    **Deferred, then settled in Wave 5:** pruning overlapping third-party skills. Every consumer now
    takes one set, named in this repository's `shared-skills` block.
+9. **A `stamp-on-tag` scheme: branches never name a version** (settled 2026-11-18). Under
+   `per-merge` each branch writes a dated section for the version it predicts, so parallel
+   sessions renumber, one branch lands at a time, a Dependabot merge turns green PRs red, and
+   bot tags need `Skipped tags` backfill. HV's workflow audit proposed stamping at tag time
+   instead; it reverses part of HV's ADR 0001, which HV supersedes when it moves.
+   - **A new `Scheme` value** beside `per-merge` and `cut-on-line`. Consumers move one at a time,
+     each with its own issue; `per-merge` is retired once nothing uses it.
+   - **Fragments, not `CHANGELOG.md`.** `ship` writes the branch's entries to
+     `changelog.d/<branch-slug>.md` (category headings and bullets) and never edits
+     `CHANGELOG.md`, so two open PRs cannot conflict. A `merge=union` driver was rejected:
+     GitHub's merge button and Update branch ignore custom drivers.
+   - **The tag workflow stamps.** On a push to `main` it starts from the tip, and for each
+     untagged merge in order it takes the fragments that merge added, writes them as
+     `## [x.y.z] - date` (the version from `next-version.mjs`, unchanged), deletes them, commits
+     `chore(release): vX.Y.Z [skip ci]`, tags that commit and pushes. One version per merge, so
+     `/land` can still confirm the tag a merge got. A merge with no fragment (a bot's, or a
+     docs-only change) gets a one-bullet section from its PR title, so every tag has a section
+     and `Skipped tags` does not apply.
+   - **One GitHub App pushes the stamp.** `GITHUB_TOKEN` cannot be a ruleset bypass actor, so a
+     user-owned App is installed on each consumer, added as a bypass actor on its `main` ruleset,
+     with its key as a repository secret: a human step per consumer. App-token pushes trigger
+     workflows, which `[skip ci]` suppresses; no consumer has a tag-triggered workflow. Deployers
+     that watch `main` outside Actions (Pages or Railway Git integrations) are checked per
+     consumer when it moves.
+   - **Rollout.** HV pilots (a plain tag workflow, a Pages deploy to prove `[skip ci]`, the ADR it
+     supersedes), then CH, then the rest, with CA (prereleases) and NC (merge-time migrations)
+     last.
+   - **To build here:** the `stamp-on-tag` entry in `settings/releases.md`; `ship` writing
+     fragments; `check-changelog.mjs` requiring a fragment where `--source` paths changed and
+     rejecting edits to `CHANGELOG.md` on a branch; a new canonical `stamp-changelog.mjs` with its
+     test, which the tag workflow calls; `docs-updater` and `end-session` reading `changelog.d/`.
 
 ## Convergence
 
