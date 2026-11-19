@@ -39,3 +39,4 @@ hand from `scripts/` here, each with its test:
 | `check-skills.mjs` | every repository | Fails when an installed skill differs from `skills-lock.json`, or the lock from the shared install commands. |
 | `sync-main.mjs` | a repository with a private companion | Fast-forwards the checkout and the companion to `origin/main`, both or neither. |
 | `next-version.mjs`, `check-changelog.mjs` | a repository with a changelog | Print the version the next merge mints, and verify the changelog for that merge. |
+| `stamp-changelog.mjs` | a repository with `Scheme: stamp-on-tag`, beside the two above | Run by the tag workflow: turns each merge's `changelog.d/` fragments, or its PR title, into its dated section and tags the merge commit. |
