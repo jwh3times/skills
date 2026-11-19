@@ -114,9 +114,21 @@ jobs:
           path: consumer
           token: ${{ steps.app-token.outputs.token }}
 
+      # The installs run inside the consumer, and npm refuses one whose package.json pins another
+      # Node line (devEngines or engines), so use the consumer's own .nvmrc, as its CI does.
+      - name: Pick the consumer's Node version
+        id: node
+        run: |
+          if [ -f consumer/.nvmrc ]; then
+            echo "file=consumer/.nvmrc" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=22" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 22
+          node-version: ${{ steps.node.outputs.version }}
+          node-version-file: ${{ steps.node.outputs.file }}
 
       - name: Take the skills and scripts
         run: node skills/scripts/consumer-sync.mjs consumer
