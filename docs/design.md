@@ -199,6 +199,12 @@ settings: `ship` uses the headings the file already has and keeps an existing li
 own pattern. The bump always sets an exact `x.y.0` computed from the `origin/main` baseline (VA), so
 a re-run cannot advance twice; HV's and MA's relative `npm version minor|major` become that.
 
+**Amended 2026-11-18:** `Scheme` now has four implementations in the `ship` body. Decision 9 added
+`stamp-on-tag`, which no consumer uses yet. Consumers move to it one at a time, HV first. The
+consumer assignments above predate Decision 8's amendments: LB and NC move to `per-merge` and PG
+to `cut-on-line` (2026-11-03), and CA and TI move to `per-merge` (2026-11-12, TI with `roll up`).
+`none` is left for this repository. The Found table records the survey and is unchanged.
+
 | Setting | Found |
 | --- | --- |
 | Scheme | **rollup-per-merge** (AR); **dated per merge plus backfill of skipped tags** (CH, GT, HV, MA, VA); **accumulate, cut only on a major/minor change** (LB); **none** (NC, PG — ship skips its versioning section) |
