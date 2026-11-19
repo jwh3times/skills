@@ -3,8 +3,9 @@
 Source for the agent skills published as `jwh3times/skills` and installed into the consumer
 repositories under `~/dev/`: apexracers, caitlyn-holland-vip, causet, guardiantracker, holland-vip,
 leasebook, magic-agenda, Nearcited, PressGolf, TirelessInvest, valleys-at-ashebrook-hoa. A new
-consumer joins this list, `consumers.json` and the Status line of `docs/design.md`. `docs/design.md` is the
-architecture; read it before changing how a skill is structured, configured, or installed.
+consumer joins this list, `consumers.json` and the Status line of `docs/design.md`.
+`docs/design.md` is the architecture; read it before changing how a skill is structured,
+configured, or installed.
 
 ## Skill bodies
 
@@ -32,7 +33,9 @@ architecture; read it before changing how a skill is structured, configured, or 
 - `scripts/sync-agents.mjs`, `lint-agent-neutrality.mjs`, `sync-main.mjs`, `next-version.mjs`,
   `check-changelog.mjs`, `stamp-changelog.mjs`, `check-docs.mjs` and `check-skills.mjs` are the
   canonical copies of the scripts the consumer repositories carry, each with its test. Fix them
-  here first; consumers take the new copy.
+  here first; consumers take the new copy. A new one also joins the lists at the top of
+  `scripts/consumer-drift.mjs`, which the drift report and `consumer-sync.mjs` read. The other
+  scripts (`build-settings`, `self-install`, `consumer-drift`, `consumer-sync`) run only here.
 - `settings/agents-md.md` also holds the `mattpocock/skills` snapshot every consumer installs: its
   commit and skill list are in the `shared-skills` block's install command.
 - A skill derived from someone else's keeps their license notice inside its own folder (as

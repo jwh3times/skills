@@ -29,8 +29,8 @@ block out: see [settings/agents-md.md](settings/agents-md.md). Its `shared-skill
 second install command, for the `mattpocock/skills` snapshot every repository runs, pinned by commit;
 `check-skills.mjs` fails until both have run.
 
-The CLI installs only skills. The settings' defaults also call scripts, which a repository copies by
-hand from `scripts/` here, each with its test:
+The CLI installs only skills. The settings' defaults also call scripts, which a repository copies
+from `scripts/` here, each with its test:
 
 | Script | Copied by | Does |
 | --- | --- | --- |
@@ -40,3 +40,8 @@ hand from `scripts/` here, each with its test:
 | `sync-main.mjs` | a repository with a private companion | Fast-forwards the checkout and the companion to `origin/main`, both or neither. |
 | `next-version.mjs`, `check-changelog.mjs` | a repository with a changelog | Print the version the next merge mints, and verify the changelog for that merge. |
 | `stamp-changelog.mjs` | a repository with `Scheme: stamp-on-tag`, beside the two above | Run by the tag workflow: turns each merge's `changelog.d/` fragments, or its PR title, into its dated section and tags the merge commit. |
+
+To update another repository's checkout in one step, run `node scripts/consumer-sync.mjs <checkout>`
+from a clone of this repository: it re-runs the install commands there, copies each script above
+that every repository carries and each other one the checkout already has, and runs its
+`sync-agents.mjs`. It commits nothing.
