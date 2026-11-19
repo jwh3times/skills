@@ -455,7 +455,12 @@ per-project install and the shared scripts are recorded under Architecture.
      release under `Changed`, with a warning). Each consumer's move also checks: rebase merging
      off, since every first-parent commit is a release; a never-cancelling `concurrency` group,
      with only a non-fast-forward rejection treated as benign; the newest three-part tag on the
-     last merge before the move; and the move PR emptying `Unreleased` into a fragment.
+     last merge before the move; and the move PR emptying `Unreleased` into a fragment and
+     backfilling a section for any tag that has none (a Dependabot merge `ship` had not yet
+     backfilled), the one version section the check accepts from a branch, since the workflow
+     never stamps a tagged merge. A required check named `Changelog Version` keeps its name. The
+     holland-vip pilot released `v1.6.10` on 2026-11-19 with no fixes beyond a CodeQL finding in
+     a test.
 
 ## Convergence
 
