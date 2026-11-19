@@ -461,6 +461,27 @@ per-project install and the shared scripts are recorded under Architecture.
      never stamps a tagged merge. A required check named `Changelog Version` keeps its name. The
      holland-vip pilot released `v1.6.10` on 2026-11-19 with no fixes beyond a CodeQL finding in
      a test.
+10. **Consumers are kept current from here** (settled 2026-11-19). `check-skills.mjs` proves a
+    consumer matches its own lock, never that it matches this repository, and the install command
+    is unpinned, so each merge here left every consumer behind with nothing saying so: on
+    2026-11-19 nine of the eleven still held the 2026-11-12 `ship`, and caitlyn-holland-vip fell
+    behind within hours of its own refresh, when #56 changed `ship` again.
+    - **A drift report.** `scripts/consumer-drift.mjs` reads each consumer's `main` through the
+      API and compares, by git object id, its six skills from here (folder trees), the canonical
+      scripts it carries (blobs; the four every consumer needs are reported when missing), and its
+      lock's pin for each third-party snapshot. The lock's `commit` field moves on every install,
+      so it is never compared. The Consumers workflow runs it after each push to `main` and daily
+      and keeps one `consumer-drift` issue current, closing it when none is behind.
+    - **Sync pull requests, where a bot can open one.** For a consumer marked `sync: true` in
+      `consumers.json`, the workflow runs `scripts/consumer-sync.mjs` in a checkout of its `main`
+      (the install commands, the carried scripts, then `sync-agents`) and force-pushes a bot-owned
+      `chore/take-skills` branch, opening a pull request through the release GitHub App so the
+      consumer's CI runs. Only `stamp-on-tag` consumers take `sync: true`: under `per-merge` a pull
+      request must predict its version in `CHANGELOG.md`, which a bot cannot do safely. Each move to
+      `stamp-on-tag` adds the consumer to it. The App gains Pull requests write; the variable and
+      secret it already uses go into this repository too.
+    - **Rejected: failing a consumer's CI when it is behind.** Every merge here would turn every
+      consumer's open pull requests red, the problem `stamp-on-tag` removed for Dependabot.
 
 ## Convergence
 

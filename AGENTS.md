@@ -3,7 +3,7 @@
 Source for the agent skills published as `jwh3times/skills` and installed into the consumer
 repositories under `~/dev/`: apexracers, caitlyn-holland-vip, causet, guardiantracker, holland-vip,
 leasebook, magic-agenda, Nearcited, PressGolf, TirelessInvest, valleys-at-ashebrook-hoa. A new
-consumer joins this list and the Status line of `docs/design.md`. `docs/design.md` is the
+consumer joins this list, `consumers.json` and the Status line of `docs/design.md`. `docs/design.md` is the
 architecture; read it before changing how a skill is structured, configured, or installed.
 
 ## Skill bodies
@@ -44,6 +44,15 @@ architecture; read it before changing how a skill is structured, configured, or 
 Read-only sources: ask before editing any repository other than this one. Read each skill from
 `~/dev/<repo>/.agents/skills/` (authored); `.claude/skills/` there is a generated mirror.
 apexracers is the most maintained baseline.
+
+Every merge here leaves the consumers behind until each takes it. The Consumers workflow
+(`.github/workflows/consumers.yml`) runs `scripts/consumer-drift.mjs` after each push to `main` and
+daily, and keeps the open `consumer-drift` issue listing who is behind on what. For a consumer
+marked `sync: true` in `consumers.json` (those on `Scheme: stamp-on-tag`), it also runs
+`scripts/consumer-sync.mjs` there and opens a `chore/take-skills` pull request through the release
+GitHub App. The others are refreshed by hand the same way: `node scripts/consumer-sync.mjs
+<consumer-checkout>`, then ship that branch. Run `node scripts/consumer-drift.mjs` to see the
+report locally.
 
 ## Publishing
 
