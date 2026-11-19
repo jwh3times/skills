@@ -300,7 +300,7 @@ test("folder transport: CRLF maps stay CRLF and conflict copies are reported", (
   const { dir, deps } = folderSetup(context);
   writeFileSync(
     path.join(dir, "handoff_map.json"),
-    `﻿${JSON.stringify(sampleMap(), null, 2).replace(/\n/gu, "\r\n")}\r\n`,
+    `\uFEFF${JSON.stringify(sampleMap(), null, 2).replace(/\n/gu, "\r\n")}\r\n`,
   );
   writeFileSync(path.join(dir, "handoff_map (conflict 1).json"), "{}");
   writeFileSync(path.join(dir, "s.md"), "x");
