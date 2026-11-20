@@ -10,6 +10,6 @@
     { "repo": "jwh3times/Nearcited" },
     { "repo": "jwh3times/PressGolf" },
     { "repo": "jwh3times/TirelessInvest" },
-    { "repo": "jwh3times/valleys-at-ashebrook-hoa" }
+    { "repo": "jwh3times/valleys-at-ashebrook-hoa", "sync": true }
   ]
 }
