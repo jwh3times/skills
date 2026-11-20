@@ -1,6 +1,6 @@
 {
   "consumers": [
-    { "repo": "jwh3times/apexracers" },
+    { "repo": "jwh3times/apexracers", "sync": true },
     { "repo": "jwh3times/caitlyn-holland-vip", "sync": true },
     { "repo": "jwh3times/causet" },
     { "repo": "jwh3times/GuardianTracker", "sync": true },
