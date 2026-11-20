@@ -5,7 +5,7 @@
     { "repo": "jwh3times/causet" },
     { "repo": "jwh3times/GuardianTracker", "sync": true },
     { "repo": "jwh3times/holland-vip", "sync": true },
-    { "repo": "jwh3times/LeaseBook" },
+    { "repo": "jwh3times/LeaseBook", "sync": true },
     { "repo": "jwh3times/magic-agenda", "sync": true },
     { "repo": "jwh3times/Nearcited" },
     { "repo": "jwh3times/PressGolf" },
