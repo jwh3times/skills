@@ -9,7 +9,7 @@
     { "repo": "jwh3times/magic-agenda", "sync": true },
     { "repo": "jwh3times/Nearcited" },
     { "repo": "jwh3times/PressGolf" },
-    { "repo": "jwh3times/TirelessInvest" },
+    { "repo": "jwh3times/TirelessInvest", "sync": true },
     { "repo": "jwh3times/valleys-at-ashebrook-hoa", "sync": true }
   ]
 }
