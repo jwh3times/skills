@@ -7,7 +7,7 @@
     { "repo": "jwh3times/holland-vip", "sync": true },
     { "repo": "jwh3times/LeaseBook", "sync": true },
     { "repo": "jwh3times/magic-agenda", "sync": true },
-    { "repo": "jwh3times/Nearcited" },
+    { "repo": "jwh3times/Nearcited", "sync": true },
     { "repo": "jwh3times/PressGolf" },
     { "repo": "jwh3times/TirelessInvest", "sync": true },
     { "repo": "jwh3times/valleys-at-ashebrook-hoa", "sync": true }
