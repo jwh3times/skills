@@ -202,11 +202,13 @@ a re-run cannot advance twice; HV's and MA's relative `npm version minor|major` 
 **Amended 2026-11-18:** `Scheme` now has four implementations in the `ship` body. Decision 9 added
 `stamp-on-tag`. Consumers move to it one at a time, HV first: holland-vip#271,
 caitlyn-holland-vip#284, GuardianTracker#521, magic-agenda#679 and apexracers#544 moved on
-2026-11-19, and valleys-at-ashebrook-hoa#610, LeaseBook#809 and TirelessInvest#92 on 2026-11-20,
-each then marked `sync: true` in `consumers.json` (Decision 10). The
-consumer assignments above predate Decision 8's amendments: LB and NC move to `per-merge` and PG
-to `cut-on-line` (2026-11-03), and CA and TI move to `per-merge` (2026-11-12, TI with `roll up`).
-`none` is left for this repository. The Found table records the survey and is unchanged.
+2026-11-19, valleys-at-ashebrook-hoa#610, LeaseBook#809 and TirelessInvest#92 on 2026-11-20, and
+causet#470 on 2026-11-21, each then marked `sync: true` in `consumers.json` (Decision 10). causet
+tags each landing when it stamps it, before its build, and its `release.yml` reads that tag (its
+ADR-0049). The consumer assignments above predate Decision 8's amendments: LB and NC move to
+`per-merge` and PG to `cut-on-line` (2026-11-03), and CA and TI move to `per-merge` (2026-11-12,
+TI with `roll up`). `none` is left for this repository. The Found table records the survey and is
+unchanged.
 
 | Setting | Found |
 | --- | --- |
