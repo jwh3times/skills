@@ -488,6 +488,35 @@ per-project install and the shared scripts are recorded under Architecture.
       secret it already uses go into this repository too.
     - **Rejected: failing a consumer's CI when it is behind.** Every merge here would turn every
       consumer's open pull requests red, the problem `stamp-on-tag` removed for Dependabot.
+11. **Boards through one script, then `/land`** (settled 2026-11-21). Landing a pull request was
+    each repository's prose (`docs/agents/merging.md`), read by an agent and done by hand, and
+    every skill that touched a board drove `gh project` itself, each relearning the board quirks
+    apexracers recorded.
+    - **`board.mjs` first.** `/land` moves a merged PR's issues to Done, which is a board write,
+      so the board script comes first and `/land` uses it. It lives in `end-session`'s folder,
+      the skill that files and edits items, and the others call it by path as `lets-go` calls
+      `handoff-map.mjs`. `fields`, `get`, `file`, `set` and `audit` take the `Board` setting's two
+      words and read no settings. It finds an item from its issue or PR, never from `item-list`
+      (which lags writes); matches fields and options with case, spacing and the kind of dash
+      ignored, or by a unique prefix (`P2` is `P2 - Normal` on one board and `P2 — Soon` on
+      another); writes an item's fields in one mutation, retrying a burst rate limit; reads every
+      write back; and never edits a field's options. `what-next` keeps `item-list` for ranking, the
+      board's manual order. Every board but caitlyn-holland-vip's has GitHub's "Item closed"
+      workflow on, and holland-vip and magic-agenda record that it still misses items, so a skill
+      re-reads Status after a close and sets Done when it is not: no setting says which boards are
+      automatic.
+    - **`/land` next.** The user's words name the PR; that covers catching it up, waiting and
+      merging, never `--admin`, and no run without a user. Fixed in the body: checks watched by
+      the head's full sha, never `--watch` alone; a blocked-but-green PR read in a fixed order (CI
+      never ran, a CodeQL alert or upload, behind); a red that the repository's guide does not name
+      a known false red stops it; closing references read before the merge; a failed merge call
+      checked before a retry; the tag run found by the merge's sha and the tag confirmed on the
+      merge; the stamp commit waited for before the next catch-up; Done checked; the private
+      follow-up reminded. It watches deploys and migrations and never runs them. Its settings are a
+      `merging` topic whose headings join each repository's existing `docs/agents/merging.md`
+      beside the prose, which `/land` reads every run, so known false reds stay prose. causet
+      installs it with `Merge command: none`, pointing to its own `docs/agents/landing.md`: its
+      `cst merge --compact` landings differ in kind.
 
 ## Convergence
 
