@@ -163,10 +163,26 @@ function fakeBoard() {
     throw new Error(`unexpected operation ${name}`);
   }
 
+  // Renames a field or one of its options on the board, and on every item that holds it.
+  const rename = (fieldName, to, optionName) => {
+    const field = project.fields.find((candidate) => candidate.name === fieldName);
+    for (const item of Object.values(items)) {
+      if (!(fieldName in item.values)) continue;
+      const value = item.values[fieldName];
+      if (optionName === undefined) {
+        delete item.values[fieldName];
+        item.values[to] = value;
+      } else if (value === optionName) item.values[fieldName] = to;
+    }
+    if (optionName === undefined) field.name = to;
+    else field.options.find((option) => option.name === optionName).name = to;
+  };
+
   return {
     graphql,
     calls,
     items,
+    rename,
     failNextMutationWith: (...errors) => {
       failMutation = errors;
     },
@@ -396,4 +412,46 @@ test("audit finds closed work not Done, open work marked Done, and open issues o
   const withoutRepos = run(["audit", ...board], { graphql: fake.graphql, sleep: noSleep });
   assert.equal("missing" in withoutRepos, false);
   assert.throws(() => run(["audit", ...board, "--status-field", "Stage"], { graphql: fake.graphql, sleep: noSleep }), /no field "Stage"/);
+  assert.deepEqual(result.status, { field: "Status", done: "Done" });
+});
+
+test("audit's done option is matched as a write matches it", () => {
+  const fake = fakeBoard();
+  fake.rename("Status", "Done ✅", "Done");
+  const options = { graphql: fake.graphql, sleep: noSleep };
+  run(["set", ...board, "--item", "acme/app#2", "--set", "Status=Done"], options);
+  assert.equal(fake.items.PVTI_2.values.Status, "Done ✅");
+  const result = run(["audit", ...board], options);
+  assert.deepEqual(result.status, { field: "Status", done: "Done ✅" });
+  assert.deepEqual(
+    result.closedNotDone.map((item) => item.number),
+    [4],
+    "the item set to Done is done",
+  );
+  assert.deepEqual(
+    result.openDone.map((item) => item.number),
+    [5],
+  );
+});
+
+test("audit takes a board's own status field and done option, and refuses ones it does not have", () => {
+  const fake = fakeBoard();
+  fake.rename("Status", "Stage");
+  fake.rename("Stage", "Shipped", "Done");
+  const options = { graphql: fake.graphql, sleep: noSleep };
+  const result = run(["audit", ...board, "--status-field", "stage", "--done", "shipped"], options);
+  assert.deepEqual(result.status, { field: "Stage", done: "Shipped" });
+  assert.deepEqual(
+    result.closedNotDone.map((item) => [item.number, item.status]),
+    [
+      [2, "Todo"],
+      [4, null],
+    ],
+  );
+  assert.deepEqual(
+    result.openDone.map((item) => item.number),
+    [5],
+  );
+  assert.throws(() => run(["audit", ...board, "--status-field", "Stage"], options), /"Done" is not a Stage option/);
+  assert.throws(() => run(["audit", ...board, "--status-field", "Blocked by"], options), /single-select/);
 });
