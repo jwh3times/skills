@@ -70,13 +70,13 @@ function fakeBoard() {
     const key = item.content;
     const content = key
       ? {
-          __typename: contents[key].type,
+          kind: contents[key].type,
           number: Number(key.split("#")[1]),
           state: contents[key].state,
           url: `https://github.com/${key.replace("#", contents[key].type === "Issue" ? "/issues/" : "/pull/")}`,
           repository: { nameWithOwner: key.split("#")[0] },
         }
-      : { __typename: "DraftIssue", title: item.title };
+      : { kind: "DraftIssue", title: item.title };
     const values = Object.entries(item.values).map(([name, value]) => {
       const field = project.fields.find((candidate) => candidate.name === name);
       const node = { field: { name } };
@@ -113,6 +113,9 @@ function fakeBoard() {
           },
         },
       };
+    }
+    if ((name === "Item" || name === "Items") && !query.includes("kind: __typename")) {
+      throw new Error(`${name} must alias content's __typename as kind, which this fake answers`);
     }
     if (name === "Item") return { node: items[variables.id] ? itemNode(variables.id) : null };
     if (name === "Items") {
