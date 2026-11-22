@@ -10,7 +10,7 @@ import {
   parseRules,
   prVerdict,
   releaseVerdict,
-  run,
+  runCommand,
   summarizeChecks,
   tagsAt,
 } from "../skills/land/land.mjs";
@@ -24,7 +24,7 @@ const BASE = "e".repeat(40);
 
 function checkRun(name, { status = "COMPLETED", conclusion = "SUCCESS", required = true, runStatus = null } = {}) {
   return {
-    __typename: "CheckRun",
+    typename: "CheckRun",
     name,
     status,
     conclusion: status === "COMPLETED" ? conclusion : null,
@@ -57,7 +57,7 @@ function pullRequest(overrides = {}) {
     headRefName: "feat/3-widget",
     headRefOid: HEAD,
     baseRefName: "main",
-    author: { __typename: "User", login: "someone" },
+    author: { typename: "User", login: "someone" },
     mergeCommit: null,
     closing: [{ number: 3, state: "OPEN", repo: REPO }],
     contexts: [checkRun("test"), checkRun("lint")],
@@ -114,7 +114,7 @@ function fakeRepo({ prs = [pullRequest()], rules = RULES, issues = { 4: "OPEN" }
       const repository = {};
       for (const match of query.matchAll(/i(\d+): issueOrPullRequest/g)) {
         const number = Number(match[1]);
-        repository[`i${number}`] = issues[number] ? { __typename: "Issue", number, state: issues[number] } : null;
+        repository[`i${number}`] = issues[number] ? { typename: "Issue", number, state: issues[number] } : null;
       }
       return { repository };
     }
@@ -151,7 +151,7 @@ function clock() {
 
 function runWith(repo, argv) {
   const time = clock();
-  const result = run(argv, { graphql: repo.graphql, rest: repo.rest, sleep: time.sleep, now: time.now });
+  const result = runCommand(argv, { graphql: repo.graphql, rest: repo.rest, sleep: time.sleep, now: time.now });
   return { result, slept: time.elapsed() };
 }
 
@@ -181,7 +181,7 @@ test("checks are summarized: failures, pending, stuck, cancelled duplicates and 
       checkRun("build", { conclusion: "CANCELLED" }),
       checkRun("build"),
       checkRun("deploy", { conclusion: "SKIPPED", required: false }),
-      { __typename: "StatusContext", context: "Pages", state: "PENDING", isRequired: false, description: "Building" },
+      { typename: "StatusContext", context: "Pages", state: "PENDING", isRequired: false, description: "Building" },
     ],
     ["test", "lint", "Verify generated agent config"],
   );
@@ -257,7 +257,7 @@ test("a closing reference the link line does not name, or names as Part of, is u
 });
 
 test("a bot's PR skips the mention lookup, and a Dependabot author is flagged", () => {
-  const repo = fakeRepo({ prs: [pullRequest({ author: { __typename: "Bot", login: "dependabot" }, body: "Bumps x. See #1314 upstream.", closing: [] })] });
+  const repo = fakeRepo({ prs: [pullRequest({ author: { typename: "Bot", login: "dependabot" }, body: "Bumps x. See #1314 upstream.", closing: [] })] });
   const { result } = runWith(repo, ["pr", "--repo", REPO, "--pr", "7"]);
   assert.equal(result.dependabot, true);
   assert.deepEqual(result.mentioned, []);
@@ -308,6 +308,44 @@ test("a new head stops the wait as head-moved", () => {
   assert.equal(result.verdict, "head-moved");
 });
 
+test("--moved-from waits past the old head's behind or conflicts until a new head arrives", () => {
+  const behind = pullRequest({ mergeStateStatus: "BEHIND" });
+  const conflicting = pullRequest({ mergeStateStatus: "DIRTY", mergeable: "CONFLICTING" });
+  const moved = pullRequest({ headRefOid: OTHER });
+  const repo = fakeRepo({ prs: [conflicting, behind, moved] });
+  const { result, slept } = runWith(repo, ["pr", "--repo", REPO, "--pr", "7", "--moved-from", HEAD, "--wait", "300"]);
+  assert.equal(result.headSha, OTHER);
+  assert.equal(result.verdict, "ready", "the new head's own verdict");
+  assert.equal(result.timedOut, false);
+  assert.equal(slept, 40_000);
+
+  const never = runWith(fakeRepo({ prs: [behind] }), ["pr", "--repo", REPO, "--pr", "7", "--moved-from", HEAD, "--wait", "60"]);
+  assert.equal(never.result.verdict, "behind");
+  assert.equal(never.result.timedOut, true);
+
+  const merged = runWith(fakeRepo({ prs: [pullRequest({ state: "MERGED" })] }), ["pr", "--repo", REPO, "--pr", "7", "--moved-from", HEAD, "--wait", "300"]);
+  assert.equal(merged.result.verdict, "merged");
+  assert.equal(merged.slept, 0);
+
+  assert.throws(() => parseArgs(["pr", "--repo", REPO, "--pr", "7", "--moved-from", HEAD, "--expect-head", HEAD]), /not both/);
+  assert.throws(() => parseArgs(["release", "--repo", REPO, "--sha", MERGE, "--workflow", "v.yml", "--moved-from", HEAD]), /only pr/);
+});
+
+test("every query asks for __typename as typename, which some consumers' lint requires", () => {
+  const repo = fakeRepo({
+    prs: [pullRequest({ mergeStateStatus: "BLOCKED" })],
+    history: [commit(MERGE, "Merge pull request #7", BASE)],
+  });
+  runWith(repo, ["pr", "--repo", REPO, "--pr", "7"]);
+  runWith(repo, ["release", "--repo", REPO, "--sha", MERGE, "--workflow", "version.yml"]);
+  const queries = repo.calls.filter((call) => call.kind === "graphql").map((call) => call.query);
+  assert.deepEqual(
+    queries.map((query) => query.split("(")[0]),
+    ["query Pr", "query Issues", "query Main"],
+  );
+  for (const query of queries) assert.doesNotMatch(query, /(?<!typename: )__typename/);
+});
+
 test("a failed call is retried on the next poll, but only a retryable one, and only twice", () => {
   const recovered = fakeRepo({ failures: [{ message: "TLS handshake timeout", retryable: true }] });
   const { result } = runWith(recovered, ["pr", "--repo", REPO, "--pr", "7", "--wait", "120"]);
@@ -340,9 +378,9 @@ test("the merge's stamp commits and what landed since are found on the default b
   assert.deepEqual(
     tagsAt(
       [
-        { name: "v1.2.3", target: { __typename: "Tag", oid: "t1", target: { oid: MERGE } } },
-        { name: "v1.2.2", target: { __typename: "Commit", oid: BASE } },
-        { name: "light", target: { __typename: "Commit", oid: MERGE } },
+        { name: "v1.2.3", target: { typename: "Tag", oid: "t1", target: { oid: MERGE } } },
+        { name: "v1.2.2", target: { typename: "Commit", oid: BASE } },
+        { name: "light", target: { typename: "Commit", oid: MERGE } },
       ],
       MERGE,
     ),
@@ -376,7 +414,7 @@ test("release finds the workflow's run by the merge sha, ignoring other workflow
   const repo = fakeRepo({
     runs: [run_(), run_({ id: 2, name: "CI", path: ".github/workflows/ci.yml", status: "in_progress", conclusion: null })],
     history: [commit(STAMP, "chore(release): v1.2.3 [skip ci]", MERGE), commit(MERGE, "Merge pull request #7", BASE)],
-    tags: [{ name: "v1.2.3", target: { __typename: "Tag", oid: "t1", target: { oid: MERGE } } }],
+    tags: [{ name: "v1.2.3", target: { typename: "Tag", oid: "t1", target: { oid: MERGE } } }],
   });
   const { result } = runWith(repo, ["release", "--repo", REPO, "--sha", MERGE, "--workflow", "version.yml"]);
   assert.equal(result.verdict, "released");

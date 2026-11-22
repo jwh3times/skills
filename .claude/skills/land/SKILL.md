@@ -76,9 +76,11 @@ Keep `headSha` as the head being landed, and `closing` and `mentioned` for step 
 2. **Run `Catch-up`**, or `Dependabot catch-up` when `dependabot` is true, with the PR's number.
    With `Catch-up: none`, the `Guide` says how the branch reaches `main`.
 3. **Wait for the new head:**
-   `land.mjs pr --repo ... --pr <n> --expect-head <old head> --wait 300` returns `head-moved` when
-   it arrives. That head is now the one being landed. A Dependabot command can take minutes, or go
-   unanswered; the `Guide` says how long to wait and what to do next.
+   `land.mjs pr --repo ... --pr <n> --moved-from <old head> --wait 300` returns once `headSha` is
+   no longer the old head, and answers for the new one, which is now the one being landed. Still on
+   the old head when it returns (`timedOut`), run it again rather than the catch-up: a Dependabot
+   command can take minutes, or go unanswered, and the `Guide` says how long to wait and what to do
+   next.
 4. Go to step 4 with the new head.
 
 ## 4. Wait for the checks

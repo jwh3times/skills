@@ -4,7 +4,7 @@
 // the merge will close, and what the merge started. It never writes: the merge, a catch-up and any
 // re-run are commands the skill runs itself, after reading this script's answer.
 //
-//   node .agents/skills/land/land.mjs pr      --repo <owner/name> --pr <n> [--expect-head <sha>] [--wait <seconds>]
+//   node .agents/skills/land/land.mjs pr      --repo <owner/name> --pr <n> [--expect-head <sha> | --moved-from <sha>] [--wait <seconds>]
 //   node .agents/skills/land/land.mjs release --repo <owner/name> --sha <merge sha> --workflow <file> [--wait <seconds>]
 //   node .agents/skills/land/land.mjs runs    --repo <owner/name> --sha <merge sha> (--workflow <file> | --check <name>) ... [--wait <seconds>]
 //
@@ -21,7 +21,10 @@
 // up; keep it under the shell's own timeout and call again to keep waiting. A failed call is retried
 // on the next poll, twice, so one TLS timeout does not end a wait. Right after a push, a check can
 // take a minute to register, so for the first two minutes of a wait an absent required check counts
-// as pending. The repository is the `Public repository` setting; this script reads no settings.
+// as pending. `--moved-from <sha>` waits instead for the head to stop being that sha, as a
+// catch-up that pushes later (`@dependabot rebase`) needs, then answers for the new head; until
+// then the old head's `behind` or `conflicts` does not end the wait. The repository is the
+// `Public repository` setting; this script reads no settings.
 // Every command prints one JSON object, and exits 1 with `{ "error": ... }` on failure.
 //
 // What it handles, so no skill has to:
@@ -35,6 +38,8 @@
 //   - `mergeStateStatus` UNKNOWN, which GitHub computes lazily, counts as pending.
 //   - Runs are matched by sha, never `--limit 1`, which right after a merge returns the previous
 //     merge's run.
+//   - Every `__typename` is asked for as `typename`, since a dangling underscore fails some
+//     consumers' lint.
 
 import { spawnSync } from "node:child_process";
 import path from "node:path";
@@ -58,7 +63,17 @@ export function parseArgs(argv) {
   if (!COMMANDS.includes(command)) {
     throw new LandError(`expected one of ${COMMANDS.join(", ")}; got ${command ?? "(none)"}`);
   }
-  const options = { command, repo: null, pr: null, sha: null, expectHead: null, wait: 0, workflows: [], checks: [] };
+  const options = {
+    command,
+    repo: null,
+    pr: null,
+    sha: null,
+    expectHead: null,
+    movedFrom: null,
+    wait: 0,
+    workflows: [],
+    checks: [],
+  };
   for (let i = 0; i < rest.length; i += 1) {
     const flag = rest[i];
     const value = rest[i + 1];
@@ -77,6 +92,9 @@ export function parseArgs(argv) {
       case "--expect-head":
         options.expectHead = parseSha(flag, value);
         break;
+      case "--moved-from":
+        options.movedFrom = parseSha(flag, value);
+        break;
       case "--wait":
         options.wait = parseSeconds(value);
         break;
@@ -92,6 +110,10 @@ export function parseArgs(argv) {
   }
   if (!options.repo) throw new LandError("--repo <owner/name> is required");
   if (command === "pr" && !options.pr) throw new LandError("pr needs --pr <n>");
+  if (options.expectHead && options.movedFrom) throw new LandError("give --expect-head or --moved-from, not both");
+  if (command !== "pr" && (options.expectHead || options.movedFrom)) {
+    throw new LandError("only pr takes --expect-head or --moved-from");
+  }
   if (command !== "pr" && !options.sha) throw new LandError(`${command} needs --sha <merge sha>`);
   if (command === "release" && options.workflows.length !== 1) {
     throw new LandError("release needs exactly one --workflow <file>");
@@ -183,11 +205,11 @@ const PR_QUERY = `query Pr($owner: String!, $name: String!, $number: Int!) {
     pullRequest(number: $number) {
       number title url body state isDraft mergedAt mergeStateStatus mergeable
       headRefName headRefOid baseRefName
-      author { __typename login }
+      author { typename: __typename login }
       mergeCommit { oid }
       closingIssuesReferences(first: 50) { nodes { number state repository { nameWithOwner } } }
       commits(last: 1) { nodes { commit { oid statusCheckRollup { contexts(first: 100) { nodes {
-        __typename
+        typename: __typename
         ... on CheckRun {
           name status conclusion title detailsUrl isRequired(pullRequestNumber: $number)
           checkSuite { app { slug } workflowRun { databaseId event workflow { name } checkSuite { status } } }
@@ -200,12 +222,12 @@ const PR_QUERY = `query Pr($owner: String!, $name: String!, $number: Int!) {
 
 const ISSUES_QUERY = (numbers) => `query Issues($owner: String!, $name: String!) {
   repository(owner: $owner, name: $name) {
-    ${numbers.map((n) => `i${n}: issueOrPullRequest(number: ${n}) { __typename ... on Issue { number state } ... on PullRequest { number state } }`).join("\n    ")}
+    ${numbers.map((n) => `i${n}: issueOrPullRequest(number: ${n}) { typename: __typename ... on Issue { number state } ... on PullRequest { number state } }`).join("\n    ")}
   }
 }`;
 
 export function normalizeContext(node) {
-  if (node.__typename === "StatusContext") {
+  if (node.typename === "StatusContext") {
     const state = node.state === "SUCCESS" ? "passed" : FAILED.has(node.state) ? "failed" : "pending";
     return {
       name: node.context,
@@ -313,7 +335,7 @@ function readIssueStates(api, repo, numbers) {
   return numbers
     .map((n) => data.repository[`i${n}`])
     .filter(Boolean)
-    .map((node) => ({ number: node.number, kind: node.__typename === "Issue" ? "issue" : "pr", state: node.state }));
+    .map((node) => ({ number: node.number, kind: node.typename === "Issue" ? "issue" : "pr", state: node.state }));
 }
 
 export function prVerdict(pr, checks, expectHead) {
@@ -396,7 +418,7 @@ export function readPr(api, options) {
     state: pr.state,
     isDraft: pr.isDraft,
     author: pr.author?.login ?? null,
-    authorIsBot: pr.author?.__typename === "Bot",
+    authorIsBot: pr.author?.typename === "Bot",
     dependabot: /^dependabot(\[bot\])?$/i.test(pr.author?.login ?? ""),
     headRefName: pr.headRefName,
     headSha: pr.headRefOid,
@@ -412,7 +434,7 @@ export function readPr(api, options) {
     linkLine,
     unexpectedClosing,
     // A bot's body quotes upstream release notes, whose numbers are not this repository's.
-    mentioned: pr.author?.__typename === "Bot" ? [] : readIssueStates(api, repo, mentionedNumbers(pr.body, closingHere)),
+    mentioned: pr.author?.typename === "Bot" ? [] : readIssueStates(api, repo, mentionedNumbers(pr.body, closingHere)),
   };
   if (rulesError) result.rulesError = rulesError;
   if (verdict === "blocked") result.codeScanningAlerts = readAlerts(api, repo, pr.number);
@@ -428,7 +450,7 @@ const MAIN_QUERY = `query Main($owner: String!, $name: String!) {
       oid messageHeadline parents(first: 2) { nodes { oid } }
     } } } } }
     refs(refPrefix: "refs/tags/", first: 50, orderBy: { field: TAG_COMMIT_DATE, direction: DESC }) {
-      nodes { name target { __typename oid ... on Tag { target { oid } } } }
+      nodes { name target { typename: __typename oid ... on Tag { target { oid } } } }
     }
   }
 }`;
@@ -456,7 +478,7 @@ export function locateMerge(history, sha) {
 
 export function tagsAt(refs, sha) {
   return refs
-    .filter((ref) => (ref.target.__typename === "Tag" ? ref.target.target?.oid : ref.target.oid) === sha)
+    .filter((ref) => (ref.target.typename === "Tag" ? ref.target.target?.oid : ref.target.oid) === sha)
     .map((ref) => ref.name);
 }
 
@@ -554,8 +576,12 @@ function readRuns(api, options) {
 // ---------------------------------------------------------------------------------------------
 // Waiting
 
-function stillWaiting(command, result, elapsed) {
+function stillWaiting(options, result, elapsed) {
+  const { command } = options;
   const settling = elapsed < SETTLE_MS;
+  if (command === "pr" && options.movedFrom && result.headSha === options.movedFrom) {
+    return result.verdict !== "merged" && result.verdict !== "closed";
+  }
   if (command === "pr") return result.verdict === "pending" || (settling && result.verdict === "missing-checks");
   if (command === "release") return result.verdict === "running" || (settling && result.verdict === "no-run");
   return result.verdict === "running" || (settling && result.verdict === "waiting");
@@ -563,7 +589,7 @@ function stillWaiting(command, result, elapsed) {
 
 const READERS = { pr: readPr, release: readRelease, runs: readRuns };
 
-export function run(argv, { graphql = ghGraphql, rest = ghRest, sleep = pause, now = Date.now } = {}) {
+export function runCommand(argv, { graphql = ghGraphql, rest = ghRest, sleep = pause, now = Date.now } = {}) {
   const options = parseArgs(argv);
   const api = { graphql, rest };
   const read = READERS[options.command];
@@ -584,9 +610,9 @@ export function run(argv, { graphql = ghGraphql, rest = ghRest, sleep = pause, n
     }
     if (result) {
       const elapsed = now() - start;
-      if (!stillWaiting(options.command, result, elapsed) || now() + POLL_MS > deadline) {
+      if (!stillWaiting(options, result, elapsed) || now() + POLL_MS > deadline) {
         result.waitedSeconds = Math.round(elapsed / 1000);
-        if (options.wait > 0) result.timedOut = stillWaiting(options.command, result, elapsed);
+        if (options.wait > 0) result.timedOut = stillWaiting(options, result, elapsed);
         if (lastError) result.recoveredFrom = lastError.message;
         return result;
       }
@@ -595,13 +621,13 @@ export function run(argv, { graphql = ghGraphql, rest = ghRest, sleep = pause, n
   }
 }
 
-function main() {
+function cli() {
   try {
-    console.log(JSON.stringify(run(process.argv.slice(2)), null, 2));
+    console.log(JSON.stringify(runCommand(process.argv.slice(2)), null, 2));
   } catch (error) {
     console.log(JSON.stringify({ error: error.message }, null, 2));
     process.exitCode = 1;
   }
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) cli();

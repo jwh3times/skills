@@ -15,8 +15,8 @@ installed here, joining the shared install command, which each consumer takes at
 ## Goal
 
 Publish the skills the user wrote — `ship`, `land`, `end-session`, `handoff`, `lets-go`,
-`docs-updater` and `what-next` — from this one repository, installable into any repository. Installing adapts a skill
-to its repository, but **by writing settings, not by editing the skill**: the skill body stays
+`docs-updater` and `what-next` — from this one repository, installable into any repository.
+Installing adapts a skill to its repository, but **by writing settings, not by editing the skill**: the skill body stays
 identical everywhere so fixes flow to every repository by re-running the install (see Install and update).
 
 ## Why not edit the skill per repo
