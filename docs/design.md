@@ -16,8 +16,9 @@ installed here, joining the shared install command, which each consumer takes at
 
 Publish the skills the user wrote — `ship`, `land`, `end-session`, `handoff`, `lets-go`,
 `docs-updater` and `what-next` — from this one repository, installable into any repository.
-Installing adapts a skill to its repository, but **by writing settings, not by editing the skill**: the skill body stays
-identical everywhere so fixes flow to every repository by re-running the install (see Install and update).
+Installing adapts a skill to its repository, but **by writing settings, not by editing the
+skill**: the skill body stays identical everywhere so fixes flow to every repository by re-running
+the install (see Install and update).
 
 ## Why not edit the skill per repo
 
@@ -111,7 +112,7 @@ PG PressGolf, VA valleys-at-ashebrook-hoa; TI TirelessInvest joined after this s
 column in it. Kind: **value** (command, path, name), **toggle** (a shared
 step on or off), **step** (selects one of several implementations), **hook** (repo-only steps).
 
-### `docs/agents/workspace.md` — new; read by every skill but `what-next`
+### `docs/agents/workspace.md` — new; read by every skill but `land` and `what-next`
 
 | Setting | Found | Kind |
 | --- | --- | --- |
