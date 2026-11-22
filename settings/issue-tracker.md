@@ -6,13 +6,13 @@
 
 ## Public repository
 
-- **Read by:** end-session, what-next
+- **Read by:** end-session, land, what-next
 - **Value:** `owner/name` exactly as GitHub spells it (casing can differ from the directory name).
 - **Discover:** `gh repo view --json nameWithOwner -q .nameWithOwner`.
 
 ## Private issue repository
 
-- **Read by:** end-session, ship, what-next
+- **Read by:** end-session, land, ship, what-next
 - **Value:** `none`, a literal `owner/name`, or a `discover:` value — the repository that holds
   issues too sensitive for the public tracker.
 - **Default:** the `Private companion`'s repository; `none` without a companion.
@@ -22,7 +22,7 @@
 
 ## Board
 
-- **Read by:** end-session, ship, what-next
+- **Read by:** end-session, land, ship, what-next
 - **Value:** `none`, or the GitHub project as `<owner> <number>` (the arguments `gh project` takes),
   or a `discover:` value.
 - **Discover:** `gh project list --owner <owner>`, matched to the repository by title, and links to
@@ -30,7 +30,7 @@
 
 ## Board fields
 
-- **Read by:** end-session, what-next
+- **Read by:** end-session, land, what-next
 - **Value:** bulleted list, one per field the skills set: field name, its options, and when each
   applies (e.g. `Status: Todo / In Progress / Blocked / Parked / Done`; `Blocked by: <reason>` set
   with `Blocked`). Field and option IDs are looked up at run time, never written here.
