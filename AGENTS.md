@@ -38,9 +38,9 @@ configured, or installed.
   scripts (`build-settings`, `self-install`, `consumer-drift`, `consumer-sync`) run only here.
 - `settings/agents-md.md` also holds the `mattpocock/skills` snapshot every consumer installs: its
   commit and skill list are in the `shared-skills` block's install command.
-- A skill's helper script (`skills/handoff/handoff-map.mjs`, `skills/end-session/board.mjs`) lives
-  in its skill's folder and installs with it, unlike the scripts above; its test sits in
-  `scripts/` so the test does not install.
+- A skill's helper script (`skills/handoff/handoff-map.mjs`, `skills/end-session/board.mjs`,
+  `skills/land/land.mjs`) lives in its skill's folder and installs with it, unlike the scripts
+  above; its test sits in `scripts/` so the test does not install.
 - A skill derived from someone else's keeps their license notice inside its own folder (as
   `skills/handoff/LICENSE`), since the folder installs without the rest of this repository.
 - `npm run check` (CI runs it) must pass before a commit.

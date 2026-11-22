@@ -10,13 +10,15 @@ converged on the settings defaults (#16, see Convergence) and took #17. Tireless
 2026-11-10 (TirelessInvest#1), after the surveys, already on `skills` 1.8.0 and the version 2 lock
 (TirelessInvest#2). `what-next` written 2026-11-12 (see the `issue-tracker.md` catalog) and
 installed here, joining the shared install command, which each consumer takes at its next refresh.
+`land` written 2026-11-21 (Decision 11, the `merging.md` catalog) and joined the same way.
 
 ## Goal
 
-Publish the skills the user wrote — `ship`, `end-session`, `handoff`, `lets-go`, `docs-updater` and
-`what-next` — from this one repository, installable into any repository. Installing adapts a skill
-to its repository, but **by writing settings, not by editing the skill**: the skill body stays
-identical everywhere so fixes flow to every repository by re-running the install (see Install and update).
+Publish the skills the user wrote — `ship`, `land`, `end-session`, `handoff`, `lets-go`,
+`docs-updater` and `what-next` — from this one repository, installable into any repository.
+Installing adapts a skill to its repository, but **by writing settings, not by editing the
+skill**: the skill body stays identical everywhere so fixes flow to every repository by re-running
+the install (see Install and update).
 
 ## Why not edit the skill per repo
 
@@ -110,7 +112,7 @@ PG PressGolf, VA valleys-at-ashebrook-hoa; TI TirelessInvest joined after this s
 column in it. Kind: **value** (command, path, name), **toggle** (a shared
 step on or off), **step** (selects one of several implementations), **hook** (repo-only steps).
 
-### `docs/agents/workspace.md` — new; read by every skill but `what-next`
+### `docs/agents/workspace.md` — new; read by every skill but `land` and `what-next`
 
 | Setting | Found | Kind |
 | --- | --- | --- |
@@ -263,6 +265,33 @@ has a default, taken from the `dev-flow` topic, and its heading is written only 
 | PR body | template path; extra lines: `Release level:` (CH), `Fixes #NN` (PG), template checklist (AR, NC) |
 | Hook: review before PR | NC's trigger table; PG's impact flags feeding the PR body |
 | Hook: issue-linkage warnings | LB (board, Track/Gate, private-tracker leak), PG, NC (`Closes #N`) |
+
+### `docs/agents/merging.md` — land-only
+
+As built (2026-11-21, Decision 11): `settings/merging.md` holds `Guide`, `Merge command`,
+`Catch-up`, `Dependabot catch-up`, `Release workflow` and `Deploys`, beside each repository's own
+merging prose, which `land` reads in full every run: the known false reds and their remedies stay
+prose, since no two repositories share one. Every setting has a default, so most repositories
+write only `Deploys`, `Dependabot catch-up` and a `Hook: after merge`. `land` also
+reads `Scheme` (`releases`) and `Public repository`, `Private issue repository`, `Board` and
+`Board fields` (`issue-tracker`). Surveyed 2026-11-21 from the ten `merging.md` files (CA's is
+`landing.md`):
+
+| Setting | Found |
+| --- | --- |
+| Guide | `docs/agents/merging.md` (all but CA); `docs/agents/landing.md` (CA) |
+| Merge command | `gh pr merge <n> --merge` (MA, NC, TI), with `--delete-branch` (CH, GT, LB, VA); none named (AR, HV); `cst merge <branch> --compact` on `main`, run by the owner's procedure (CA, so `none`) |
+| Catch-up | `gh pr update-branch <n>` or a merge of `origin/main`, never a rebase (AR, CH, GT, HV, LB, MA, NC, TI, VA); CA's rules are not strict |
+| Dependabot catch-up | `@dependabot rebase` (AR, NC, VA on a conflict); `gh pr update-branch <n> --rebase`, because the comment went unanswered (MA); `gh pr update-branch <n>`, never a rebase after pushing a fix (GT) |
+| Release workflow | `version.yml` (all but TI); `release.yml`, whose `tag` job stamps and whose `web` job deploys (TI) |
+| Deploys | `deploy.yml` by `workflow_run` (NC); `deploy.yml` on the push (AR); Deploy Migrations, Deploy Auth Config and the Cloudflare Pages check (MA); Cloudflare Workers Builds as a check (VA); Railway, read through its logs, never by querying production (TI) |
+| Hook: after merge | strip stale `ready-for-agent` labels (LB); `npm run sync:main` (VA); `npm run board:blockers` after the tag (GT); a draft advisory's `## Resolution` (AR); MA's seven-step "complete all follow ups" |
+
+Fixed in the body, from the same files: watching by the head's full sha (AR, GT, LB, VA); the
+blocked-but-green order, CI never ran, a CodeQL alert or upload, behind (AR, TI, VA); a failed
+merge call read before a retry (MA, LB, VA); closing references read before the merge (MA, LB, VA,
+CA); the release run found by the merge's sha (LB, TI, VA); the stamp waited for before the next
+catch-up (every stamp-on-tag repository); an approval covering only the PRs it names (AR, LB, CH).
 
 ### `docs/agents/dev-flow.md`, `triage-labels.md`, and the `agents-md` text
 
@@ -517,6 +546,14 @@ per-project install and the shared scripts are recorded under Architecture.
       beside the prose, which `/land` reads every run, so known false reds stay prose. causet
       installs it with `Merge command: none`, pointing to its own `docs/agents/landing.md`: its
       `cst merge --compact` landings differ in kind.
+    - **As built (2026-11-21).** `skills/land/land.mjs` reads and never writes: `pr` gives the
+      head, every check on it with whether it is required, the ruleset's required checks that
+      never reported, the closing references against the link line, and one verdict; `release`
+      and `runs` find the merge's release run, tags, stamp and deploys by sha, the stamp's sha
+      too for a `workflow_run` run. Each takes `--wait`, polling and surviving two failed calls.
+      The pointer to `landing.md` is the `Guide` setting, so causet's `docs/agents/merging.md`
+      is settings only, `Merge command: none` among them. Run against causet#470, `pr` flags the
+      `Part of #469` that closed #469.
 
 ## Convergence
 
