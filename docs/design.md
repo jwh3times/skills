@@ -11,14 +11,15 @@ converged on the settings defaults (#16, see Convergence) and took #17. Tireless
 (TirelessInvest#2). `what-next` written 2026-11-12 (see the `issue-tracker.md` catalog) and
 installed here, joining the shared install command, which each consumer takes at its next refresh.
 `land` written 2026-11-21 (Decision 11, the `merging.md` catalog) and joined the same way.
+`dependabot` written 2026-11-22 (Decision 12, the `dependabot.md` catalog) and joined the same way.
 
 ## Goal
 
-Publish the skills the user wrote — `ship`, `land`, `end-session`, `handoff`, `lets-go`,
-`docs-updater` and `what-next` — from this one repository, installable into any repository.
-Installing adapts a skill to its repository, but **by writing settings, not by editing the
-skill**: the skill body stays identical everywhere so fixes flow to every repository by re-running
-the install (see Install and update).
+Publish the skills the user wrote — `ship`, `land`, `dependabot`, `end-session`, `handoff`,
+`lets-go`, `docs-updater` and `what-next` — from this one repository, installable into any
+repository. Installing adapts a skill to its repository, but **by writing settings, not by editing
+the skill**: the skill body stays identical everywhere so fixes flow to every repository by
+re-running the install (see Install and update).
 
 ## Why not edit the skill per repo
 
@@ -112,7 +113,7 @@ PG PressGolf, VA valleys-at-ashebrook-hoa; TI TirelessInvest joined after this s
 column in it. Kind: **value** (command, path, name), **toggle** (a shared
 step on or off), **step** (selects one of several implementations), **hook** (repo-only steps).
 
-### `docs/agents/workspace.md` — new; read by every skill but `land` and `what-next`
+### `docs/agents/workspace.md` — new; read by every skill but `land`, `dependabot` and `what-next`
 
 | Setting | Found | Kind |
 | --- | --- | --- |
@@ -266,7 +267,7 @@ has a default, taken from the `dev-flow` topic, and its heading is written only 
 | Hook: review before PR | NC's trigger table; PG's impact flags feeding the PR body |
 | Hook: issue-linkage warnings | LB (board, Track/Gate, private-tracker leak), PG, NC (`Closes #N`) |
 
-### `docs/agents/merging.md` — land-only
+### `docs/agents/merging.md` — read by `land`, and its `Guide` by `dependabot`
 
 As built (2026-11-21, Decision 11): `settings/merging.md` holds `Guide`, `Merge command`,
 `Catch-up`, `Dependabot catch-up`, `Release workflow` and `Deploys`, beside each repository's own
@@ -292,6 +293,31 @@ blocked-but-green order, CI never ran, a CodeQL alert or upload, behind (AR, TI,
 merge call read before a retry (MA, LB, VA); closing references read before the merge (MA, LB, VA,
 CA); the release run found by the merge's sha (LB, TI, VA); the stamp waited for before the next
 catch-up (every stamp-on-tag repository); an approval covering only the PRs it names (AR, LB, CH).
+
+### `docs/agents/dependabot.md` — dependabot-only
+
+As built (2026-11-22, Decision 12): `settings/dependabot.md` holds `Label`, `Review triggers`,
+`Resolution`, `Where to look`, `Grounding facts` and `Playbook`, the fields every repository's
+profile had in the scheduled reviewer's prompt, where all ten lived in one appendix. Each moves into
+that repository's own file, which the skill reads in a session and in the scheduled run alike.
+`dependabot` also reads the merging `Guide` (`merging`) and `Public repository`
+(`issue-tracker`). Surveyed 2026-11-22 from the reviewer prompt's profiles (CA has no Dependabot):
+
+| Setting | Found |
+| --- | --- |
+| Label | the repository's name (CH, GT, HV, LB, MA, NC, PG, TI); `ApexRacers` (AR); `Valleys at Ashebrook HOA` (VA) |
+| Review triggers | majors only (CH, HV, MA, NC, VA); any postgres image bump (AR, GT, LB); any .NET base image, framework NuGet package, vite, react, typescript, eslint, vitest or react-query bump (LB); the packages `dependabot.yml` ignores and the Expo family (PG); a python image's `major.minor` (TI) |
+| Resolution | `npm ci` at the root under `.nvmrc` (CH, HV, MA, VA); Node 22 with no `.nvmrc` (PG, TI); pnpm 10.28.0's frozen install (NC); `npm ci` in the frontend's directory plus `dotnet restore` and a Release build (AR, LB) or `go build ./...` and `go mod verify` (GT); `uv sync --frozen` on Python 3.15 and pnpm 10 in `/web` (TI) |
+| Where to look | the workflows' `with:` inputs, the build and tool configs, and each Dockerfile (all) |
+| Grounding facts | a static export with no server runtime (CH, HV); no Postgres image, migrations by `supabase db push` (MA); a Workers runtime (NC, VA); a database major is always a break (AR, GT, LB); runtimes CI pins (PG, TI) |
+| Playbook | the gates for each framework, tool and database major (all); `npx expo-doctor` for Expo-pinned versions (PG). Known fixes no profile holds yet, from verdict comments and the audits: `npm run sync:image-pins` for a Playwright or Node pin (GT#524), `npm run types:worker` after a wrangler bump (VA#614), the Stripe pin probe (LB) |
+
+Fixed in the body, from the prompt and its failures: CI read first and a red check dispositive; a
+cancelled check not a red by itself; the lockfile install reproduced before any "safe to merge",
+read by `resolution.md`'s rules (hard and optional peers, pnpm's unmet peers exiting 0, uv, NuGet's
+NU errors, Go's `/vN` paths); the release notes of every major crossed; no speculative wording; one
+comment per PR, found again by its marker; a red that `main` shares reported once for the
+repository (LeaseBook, 2026-11-21).
 
 ### `docs/agents/dev-flow.md`, `triage-labels.md`, and the `agents-md` text
 
@@ -554,6 +580,33 @@ per-project install and the shared scripts are recorded under Architecture.
       The pointer to `landing.md` is the `Guide` setting, so causet's `docs/agents/merging.md`
       is settings only, `Merge command: none` among them. Run against causet#470, `pr` flags the
       `Part of #469` that closed #469.
+
+12. **One Dependabot review, sourced from each repository, and nothing merges on its own**
+    (settled 2026-11-22). A scheduled "Dependabot PR reviewer" routine reviewed every repository's
+    open Dependabot PRs from one 68 KB prompt whose appendix held all ten repositories' facts,
+    patched by hand, and in-session reviews used their own copies (the AS and LB audits). A second
+    routine, "Dependabot auto-merge" (created 2026-11-21), merged what the first cleared; its first
+    run merged six PRs, one of which (LB #802) broke `main`'s spell check through the changelog
+    line the stamp wrote from its title, hidden by the stamp's `[skip ci]`, until LB #814.
+    - **No auto-merge.** The user chose it and paused the auto-merge routine on 2026-11-22.
+      `/dependabot` never merges: it reviews, and on the user's word posts the verdicts, pushes a
+      known fix and hands the PRs the user names to `/land`. The scheduled run reviews and posts
+      only.
+    - **Each repository's facts in that repository.** Its profile becomes
+      `docs/agents/dependabot.md` (the `dependabot` catalog); the procedure is the skill body.
+      The scheduled review's prompt shrinks to running the installed skill in each repository's
+      clone, so the repository's own file is the source and nothing is synced.
+    - **`dependabot.mjs` reads over REST only**, since the cloud environment answers GraphQL with
+      403, which is also why it is not part of `land.mjs`. It parses what each PR updates from the
+      body Dependabot wrote (the title when a person replaced it; 227 of 228 sampled bodies
+      parse), classifies each update by the first segment that moves, reads the checks on the
+      current head, whether anyone but Dependabot committed, and the latest verdict with whether
+      it still names the PR's versions. The verdict marker is unchanged, so the verdicts already
+      posted still count.
+    - **A fix on a Dependabot branch** waits for the user, and the branch is caught up by
+      updating it from then on, never `@dependabot rebase`, which drops the fix (GT).
+    - **Open:** the stamped changelog line is never checked by the repository's linters. Guarding
+      it belongs in `stamp-changelog.mjs` or the release workflow, not here.
 
 ## Convergence
 

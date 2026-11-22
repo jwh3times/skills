@@ -13,6 +13,9 @@
   skill.
 - `skills/handoff/machine-config.md` — how the Handoffs folder reaches a machine. **When:** a
   transport or a key of the machine config changes.
+- `skills/dependabot/resolution.md` — how a review reads each ecosystem's lockfile install (peers,
+  pnpm's unmet peers, uv, NuGet, Go). **When:** a resolution signal is found to mislead a verdict, or
+  an ecosystem is added.
 - `settings/*.md` — the settings catalog that installs with each skill. **When:** a setting is added,
   renamed or removed, or a default changes.
 - `skills/*/settings/*.md` — copies of `settings/` that `npm run build` generates. `frozen`.
