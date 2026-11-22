@@ -1,6 +1,11 @@
 {
   "version": 1,
   "skills": {
+    "dependabot": {
+      "source": ".",
+      "sourceType": "local",
+      "computedHash": "95b6fef266b5ceb2a54c11eecc3cb1ea9c23e6c4b5e99f34e3bf033611283c85"
+    },
     "docs-updater": {
       "source": ".",
       "sourceType": "local",
