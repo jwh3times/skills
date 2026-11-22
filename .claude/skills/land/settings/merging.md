@@ -81,4 +81,3 @@ stale label, publishing an advisory's resolution), which `land` runs before the 
   on another workflow that deploy, migrate or publish; deploy checks on recent merge commits
   (`gh api repos/<owner>/<repo>/commits/<sha>/check-runs`); and the `Guide`'s account of what a
   merge deploys.
-

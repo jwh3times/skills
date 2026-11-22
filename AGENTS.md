@@ -43,7 +43,9 @@ configured, or installed.
   above; its test sits in `scripts/` so the test does not install.
 - A skill derived from someone else's keeps their license notice inside its own folder (as
   `skills/handoff/LICENSE`), since the folder installs without the rest of this repository.
-- `npm run check` (CI runs it) must pass before a commit.
+- `npm run check` (CI runs it) must pass before a commit. CI also runs
+  `git diff --check "$(git mktree </dev/null)" HEAD`, the whitespace rule the strictest consumer
+  enforces on every file it copies from here, so no trailing space or blank line at a file's end.
 
 ## Consumer repositories
 
