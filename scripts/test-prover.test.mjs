@@ -545,6 +545,18 @@ test("a path that leaves the worktree through a link of its own is refused", asy
   assert.equal(readFileSync(path.join(outside, "target.mjs"), "utf8"), "export const a = 1;\n");
 });
 
+test("an error raised during the run still puts the files back, and is the error reported", async (t) => {
+  const repo = fixtureRepo(t);
+  const { root } = await scratch(t, repo);
+  const before = readFileSync(path.join(root, "guard.mjs"));
+  // The edit is written first; the run then refuses a --cwd outside the worktree.
+  await assert.rejects(
+    main(["edit", "--root", root, "--file", "guard.mjs", "--search", "n < 10", "--replace", "n < 11", "--cwd", "..", "--command", "node touch.mjs"]),
+    (error) => !/restore failed/.test(error.message),
+  );
+  assert.deepEqual(readFileSync(path.join(root, "guard.mjs")), before);
+});
+
 test("putBack reads each file back and names one whose bytes still differ", (t) => {
   const dir = tempDir(t, "put-back-");
   const file = path.join(dir, "kept.mjs");
