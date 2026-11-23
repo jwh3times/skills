@@ -604,6 +604,11 @@ per-project install and the shared scripts are recorded under Architecture.
       current head, whether anyone but Dependabot committed, and the latest verdict with whether
       it still names the PR's versions. The verdict marker is unchanged, so the verdicts already
       posted still count.
+    - **A low-risk verdict goes stale** (2026-11-23). `verdict.current` is false once a low-risk
+      verdict no longer names the PR's versions or the PR's checks have failed since (a new
+      `main`, a rerun), so a stale "safe to merge" is neither skipped in triage nor offered for
+      landing: the PR is reviewed again and the new verdict replaces it. A needs-effort verdict
+      stays current.
     - **A fix on a Dependabot branch** waits for the user, and the branch is caught up by
       updating it from then on, never `@dependabot rebase`, which drops the fix (GT).
     - **The stamped changelog line is made inert, in `stamp-changelog.mjs`** (2026-11-22). The

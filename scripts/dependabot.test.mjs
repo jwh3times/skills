@@ -9,6 +9,7 @@ import {
   parseArgs,
   parseUpdates,
   readVerdict,
+  verdictCurrent,
   runCommand,
   summarizeChecks,
 } from "../skills/dependabot/dependabot.mjs";
@@ -144,6 +145,17 @@ test("the latest marked comment is the verdict, and it counts for the versions i
   const retargeted = [{ name: "jsdom", from: "30.1.3", to: "31.0.1", kind: "major" }];
   assert.equal(readVerdict(comments, retargeted).verdict.versionsNamed, false);
   assert.equal(readVerdict([], updates).verdict, null);
+});
+
+test("a low-risk verdict stays current only while it names the versions and the checks have not failed", () => {
+  const lowRisk = { kind: "low-risk", versionsNamed: true };
+  assert.equal(verdictCurrent(lowRisk, { state: "passed" }), true);
+  assert.equal(verdictCurrent(lowRisk, { state: "pending" }), true);
+  assert.equal(verdictCurrent(lowRisk, { state: "failed" }), false);
+  assert.equal(verdictCurrent({ ...lowRisk, versionsNamed: false }, { state: "passed" }), false);
+  assert.equal(verdictCurrent({ kind: "needs-effort", versionsNamed: false }, { state: "failed" }), true);
+  assert.equal(verdictCurrent({ kind: "needs-effort", versionsNamed: true }, { state: "passed" }), true);
+  assert.equal(verdictCurrent(null, { state: "failed" }), false);
 });
 
 function pull(number, overrides = {}) {
