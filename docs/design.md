@@ -12,6 +12,8 @@ converged on the settings defaults (#16, see Convergence) and took #17. Tireless
 installed here, joining the shared install command, which each consumer takes at its next refresh.
 `land` written 2026-11-21 (Decision 11, the `merging.md` catalog) and joined the same way.
 `dependabot` written 2026-11-22 (Decision 12, the `dependabot.md` catalog) and joined the same way.
+`scripts/guard.mjs` written 2026-11-23 (Decision 13, the `guard.md` catalog), a canonical script
+every consumer carries, which `sync-agents.mjs` registers as a hook.
 
 ## Goal
 
@@ -94,8 +96,8 @@ Every skill installs per project, `handoff`/`lets-go` included: helper scripts k
 repo-root-relative path (`.agents/skills/handoff/handoff-map.mjs`), cloud sessions get a committed
 copy, and each repository keeps one lock file. The CLI installs only skills, so the shared scripts
 (`sync-agents.mjs`, `lint-agent-neutrality.mjs`, Wave 3's `sync-main.mjs`, `next-version.mjs`,
-`check-changelog.mjs` and `check-docs.mjs`, Wave 5's `check-skills.mjs`, and Decision 9's
-`stamp-changelog.mjs`) are copied separately, by hand or by Decision 10's `consumer-sync.mjs`;
+`check-changelog.mjs` and `check-docs.mjs`, Wave 5's `check-skills.mjs`, Decision 9's
+`stamp-changelog.mjs`, and Decision 13's `guard.mjs`) are copied separately, by hand or by Decision 10's `consumer-sync.mjs`;
 this repository holds their canonical copies and tests, and fixes land here first.
 
 **This repository installs its own skills**, so `handoff` and `lets-go` work here like anywhere
@@ -325,6 +327,14 @@ Added in Wave 4 (see Second survey): `settings/dev-flow.md` and `settings/triage
 each repository's file its shared defaults, and `settings/agents-md.md` holds the `AGENTS.md` blocks,
 with no settings file of its own. `ship` installs all three; `end-session` installs
 `triage-labels` too, and `what-next` `dev-flow`, `triage-labels` and `handoffs`.
+
+### `docs/agents/guard.md` — read by `scripts/guard.mjs`, no skill
+
+As built (2026-11-23, Decision 13): `settings/guard.md` holds `Deny commands`, `Ask commands` and
+`Protected paths`, each `none` or regex bullets with a reason, defaulting to none. No skill reads
+it, so no first run proposes it, as with `AGENTS.md blocks`; `ship` installs the definition so it
+reaches every repository. Each repository's file is written from its `Dev stack` **Never run**
+commands and its `Never-remove paths` (both in `workspace.md`).
 
 ### `docs/agents/handoffs.md` — repo part of handoff/lets-go
 
@@ -619,6 +629,48 @@ per-project install and the shared scripts are recorded under Architecture.
       Prettier and markdownlint with LB's own titles: the old rendering fails on `aspnet` and
       `codegen`, the new one passes. A prose word a spell check lacks, in a title with no
       fragment, still gets through; such a PR is a person's, and `ship` writes it a fragment.
+
+13. **A shared guard hook enforces the rules instructions kept failing to** (settled 2026-11-23).
+    Rules written as instructions kept being broken, by subagents too, which inherit no memory:
+    `git checkout --` and `git restore` destroyed uncommitted work at least three times, generated
+    mirrors and shared blocks were edited by hand, force-pushes and a push straight to `main`
+    happened, and Windows Bash calls mangled backslashes into NUL bytes. A PreToolUse hook holds in
+    every session, subagent and cloud run, read or not.
+    - **Accident prevention, not a sandbox.** `scripts/guard.mjs` reads what a call says it will
+      do: a light tokenizer (quotes, separators, redirects, heredocs, also inside `$(...)`, read
+      as commands only when a shell reads them, `bash -c`, `eval`, `pwsh -Command`, `cmd /c`,
+      `cd`, `pushd`/`popd` and `git -C`), never a full shell parser. Text it cannot parse is cut
+      into rough statements, and one starting with a risky git or gh subcommand at most asks. A
+      command built to get past it gets past it.
+    - **Deny the clearly wrong, ask the risky.** Denied, with the reason sent to the agent: edits
+      under `.claude/skills/` or `.codex/agents/` where `sync-agents.mjs` generates them, under an
+      `.agents/skills/<name>/` that `skills-lock.json` lists, or overlapping a shared block in
+      `AGENTS.md`; a force-push; `gh pr merge` with `--admin`, `--squash`, `--rebase` or `--auto`.
+      Asked: a push landing on `main`, a remote delete, `git branch -D`, `git clean -x`, and the
+      commands that discard work (`checkout` of paths, `restore`, `reset --hard`,
+      `switch --discard-changes`, `clean`) only when `git status` shows work to lose; and any
+      directory or git state it cannot read. In a cloud routine or a headless run nobody answers,
+      so ask means denied there. Windows Bash hazards (`node -e` with a backslash, long heredocs,
+      `jq`, `gh --body`, `grep $'\x00'`, bare `python`) only warn, and a PostToolUse pass warns when
+      a file just written holds a NUL byte. Each repository adds rules in `docs/agents/guard.md`
+      (the `guard` catalog).
+    - **An internal error asks; nothing blocks on failure.** A guard that throws asks with
+      "guard failed: ..." and exits 0, and `onFailure` stays unset, so a guard that cannot start
+      lets the call through. A broken guard costs prompts, never a locked-out session. A malformed
+      `docs/agents/guard.md` is not an internal error: the universal rules apply alone and the
+      problem rides along as a warning, since asking on every call would stop a headless run
+      outright; `guard.mjs --check` and `sync-agents.mjs --check` fail on it. The guard never
+      prints `allow`, so the user's own permission rules still apply.
+    - **Registered by `sync-agents.mjs`**, like the mirrors: where `scripts/guard.mjs` exists it
+      merges two entries into `.claude/settings.json`, in exec form (`"command": "node"`,
+      `"args": ["${CLAUDE_PROJECT_DIR}/scripts/guard.mjs"]`) so no shell quotes a Windows path,
+      keeps every other key and hook in order, leaves the file's bytes alone when the entries are
+      current, and `--check` reports them missing or stale. The hooks documentation (read
+      2026-11-23) says exec form substitutes `${CLAUDE_PROJECT_DIR}` into each argument; a real
+      session in this repository confirms it before consumers take it, with shell form
+      `node "$CLAUDE_PROJECT_DIR/scripts/guard.mjs"` the fallback.
+    - **Out of scope:** Codex hooks (Codex parses `ask` but does not support it yet), and folding
+      valleys-at-ashebrook-hoa's production-confirmation hook into `guard.md`; it stays its own.
 
 ## Convergence
 

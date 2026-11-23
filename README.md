@@ -39,6 +39,7 @@ from `scripts/` here, each with its test:
 | `sync-agents.mjs`, `lint-agent-neutrality.mjs` | every repository | Mirror the skills for Claude Code and write the shared `AGENTS.md` blocks, and lint the skills for tool neutrality. |
 | `check-docs.mjs` | every repository | Checks local links, and that the `Doc map` matches the documents. |
 | `check-skills.mjs` | every repository | Fails when an installed skill differs from `skills-lock.json`, or the lock from the shared install commands. |
+| `guard.mjs` | every repository | A Claude Code hook, registered in `.claude/settings.json` by `sync-agents.mjs`: denies or asks before risky git commands and edits to generated files, warns about Windows shell hazards, and applies the repository's own rules from `docs/agents/guard.md`. |
 | `sync-main.mjs` | a repository with a private companion | Fast-forwards the checkout and the companion to `origin/main`, both or neither. |
 | `next-version.mjs`, `check-changelog.mjs` | a repository with a changelog | Print the version the next merge mints, and verify the changelog for that merge. |
 | `stamp-changelog.mjs` | a repository with `Scheme: stamp-on-tag`, beside the two above | Run by the tag workflow: turns each merge's `changelog.d/` fragments, or its PR title, into its dated section and tags the merge commit. |

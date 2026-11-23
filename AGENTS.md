@@ -31,11 +31,16 @@ configured, or installed.
   `.claude/skills/` mirrors those. Edit only `skills/`; `npm run build` refreshes both. Its own
   settings are in `docs/agents/`.
 - `scripts/sync-agents.mjs`, `lint-agent-neutrality.mjs`, `sync-main.mjs`, `next-version.mjs`,
-  `check-changelog.mjs`, `stamp-changelog.mjs`, `check-docs.mjs` and `check-skills.mjs` are the
-  canonical copies of the scripts the consumer repositories carry, each with its test. Fix them
-  here first; consumers take the new copy. A new one also joins the lists at the top of
-  `scripts/consumer-drift.mjs`, which the drift report and `consumer-sync.mjs` read. The other
-  scripts (`build-settings`, `self-install`, `consumer-drift`, `consumer-sync`) run only here.
+  `check-changelog.mjs`, `stamp-changelog.mjs`, `check-docs.mjs`, `check-skills.mjs` and
+  `guard.mjs` are the canonical copies of the scripts the consumer repositories carry, each with
+  its test. Fix them here first; consumers take the new copy. A new one also joins the lists at
+  the top of `scripts/consumer-drift.mjs`, which the drift report and `consumer-sync.mjs` read.
+  The other scripts (`build-settings`, `self-install`, `consumer-drift`, `consumer-sync`) run only
+  here.
+- `scripts/guard.mjs` is a Claude Code hook (Decision 13 in `docs/design.md`), registered in
+  `.claude/settings.json` by `sync-agents.mjs`, which writes only its two entries there. It runs in
+  this repository too, so an edit to `.claude/skills/` or `.agents/skills/` is denied: edit
+  `skills/` and run `npm run build`.
 - `settings/agents-md.md` also holds the `mattpocock/skills` snapshot every consumer installs: its
   commit and skill list are in the `shared-skills` block's install command.
 - A skill's helper script (`skills/handoff/handoff-map.mjs`, `skills/end-session/board.mjs`,
