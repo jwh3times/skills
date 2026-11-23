@@ -15,7 +15,7 @@ per bullet:
 ```
 
 A bullet may start with `*`, and its dash may be an em dash, an en dash or a hyphen. The regex is
-JavaScript's. A malformed bullet or regex fails `node scripts/guard.mjs --check` and
+JavaScript's, and holds no backtick. A malformed bullet or regex fails `node scripts/guard.mjs --check` and
 `node scripts/sync-agents.mjs --check`, naming the line; until it is fixed, the guard applies only
 its universal rules and says why in a warning on every call. The guard is accident prevention, not
 a sandbox: a rule catches a command as written, never every way to reach the same effect.
