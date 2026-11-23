@@ -99,6 +99,17 @@ test("a missing skill or always-carried script is reported; an absent optional s
   ]);
 });
 
+test("the guard is always carried, so a consumer without it is behind", () => {
+  const withGuard = {
+    ...upstream,
+    scripts: { ...upstream.scripts, "guard.mjs": "blob-g", "guard.test.mjs": "blob-gt" },
+  };
+  assert.deepEqual(compareConsumer(withGuard, currentConsumer()), [
+    { kind: "script", name: "guard.mjs", state: "missing" },
+    { kind: "script", name: "guard.test.mjs", state: "missing" },
+  ]);
+});
+
 test("a carried optional script is compared", () => {
   const consumer = currentConsumer();
   consumer.scripts["stamp-changelog.mjs"] = "blob-old";

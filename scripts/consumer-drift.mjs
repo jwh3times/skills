@@ -27,7 +27,7 @@ const defaultRoot = path.resolve(path.dirname(scriptPath), "..");
 export const OWN_SOURCE = "jwh3times/skills";
 export const BLOCK_FILE = "settings/agents-md.md";
 // Every consumer carries these; the optional ones only where its release scheme uses them.
-export const ALWAYS_SCRIPTS = ["sync-agents", "lint-agent-neutrality", "check-docs", "check-skills"];
+export const ALWAYS_SCRIPTS = ["sync-agents", "lint-agent-neutrality", "check-docs", "check-skills", "guard"];
 export const OPTIONAL_SCRIPTS = ["sync-main", "next-version", "check-changelog", "stamp-changelog"];
 export const SCRIPT_SUFFIXES = [".mjs", ".test.mjs"];
 
@@ -80,7 +80,11 @@ export function upstreamState(root = defaultRoot, git = runGit) {
   return { head: git(root, ["rev-parse", "HEAD"]), skills, scripts, snapshots };
 }
 
-const baseOf = (file) => SCRIPT_SUFFIXES.reduce((name, s) => (name.endsWith(s) ? name.slice(0, -s.length) : name), file);
+// The longest suffix first, so `guard.test.mjs` is `guard`, not `guard.test`.
+const baseOf = (file) => {
+  const suffix = SCRIPT_SUFFIXES.toSorted((a, b) => b.length - a.length).find((s) => file.endsWith(s));
+  return suffix ? file.slice(0, -suffix.length) : file;
+};
 
 // Lists what a consumer is behind on. `consumer` holds `skills` (folder name to tree id), `scripts`
 // (file name to blob id) and `lock` (the parsed skills-lock.json, or null).

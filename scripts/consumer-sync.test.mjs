@@ -25,7 +25,7 @@ function withFixture(fn) {
         "  -s tdd -a codex --copy -y",
       ].join("\n"),
     );
-    for (const base of ["sync-agents", "check-skills", "check-docs", "lint-agent-neutrality", "check-changelog", "stamp-changelog"]) {
+    for (const base of ["sync-agents", "check-skills", "check-docs", "lint-agent-neutrality", "guard", "check-changelog", "stamp-changelog"]) {
       write(upstream, `scripts/${base}.mjs`, `new ${base}\n`);
       write(upstream, `scripts/${base}.test.mjs`, `new ${base} test\n`);
     }
@@ -40,7 +40,7 @@ function withFixture(fn) {
   }
 }
 
-test("scripts: every always-carried one, and an optional one only where the consumer has it", () => {
+test("scripts: every always-carried one, the guard too where the consumer lacks it, and an optional one only where the consumer has it", () => {
   withFixture(({ upstream, consumer }) => {
     assert.deepEqual(planScripts(consumer, upstream), [
       "sync-agents.mjs",
@@ -51,6 +51,8 @@ test("scripts: every always-carried one, and an optional one only where the cons
       "check-docs.test.mjs",
       "check-skills.mjs",
       "check-skills.test.mjs",
+      "guard.mjs",
+      "guard.test.mjs",
       "check-changelog.mjs",
       "check-changelog.test.mjs",
     ]);
