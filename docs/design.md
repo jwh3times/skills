@@ -670,7 +670,9 @@ per-project install and the shared scripts are recorded under Architecture.
       merges two entries into `.claude/settings.json`, in exec form (`"command": "node"`,
       `"args": ["${CLAUDE_PROJECT_DIR}/scripts/guard.mjs"]`) so no shell quotes a Windows path,
       keeps every other key and hook in order, leaves the file's bytes alone when the entries are
-      current, and `--check` reports them missing or stale. The hooks documentation (read
+      current, and otherwise writes it the way Prettier and Biome print JSON at the repository's
+      own width (`printWidth` or `lineWidth`, else 80), so a consumer's formatter check passes on
+      the first registration; `--check` reports the entries missing or stale. The hooks documentation (read
       2026-11-23) says exec form substitutes `${CLAUDE_PROJECT_DIR}` into each argument; a real
       session in this repository confirms it before consumers take it, with shell form
       `node "$CLAUDE_PROJECT_DIR/scripts/guard.mjs"` the fallback.
@@ -678,7 +680,9 @@ per-project install and the shared scripts are recorded under Architecture.
       CodeQL, oxlint and Biome over the scripts they copy, so `guard.mjs` scans commands and files
       word by word or with sticky, non-overlapping patterns (CodeQL `js/redos` flagged one regex
       as exponential), a rethrown error carries its `cause` (oxlint `preserve-caught-error`), and
-      no assignment sits inside an expression (Biome `noAssignInExpressions`).
+      no assignment sits inside an expression (Biome `noAssignInExpressions`). `sync-agents.mjs`
+      awaits its async `main` at the top level rather than chaining `.then` (oxlint
+      `promise/always-return`).
     - **Out of scope:** Codex hooks (Codex parses `ask` but does not support it yet), and folding
       valleys-at-ashebrook-hoa's production-confirmation hook into `guard.md`; it stays its own.
 
