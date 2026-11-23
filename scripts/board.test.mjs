@@ -181,11 +181,17 @@ function fakeBoard() {
     else field.options.find((option) => option.name === optionName).name = to;
   };
 
+  // Changes a field's type on the board, as a board whose `Due` was made a text field has it.
+  const retype = (fieldName, dataType) => {
+    project.fields.find((candidate) => candidate.name === fieldName).dataType = dataType;
+  };
+
   return {
     graphql,
     calls,
     items,
     rename,
+    retype,
     failNextMutationWith: (...errors) => {
       failMutation = errors;
     },
@@ -457,4 +463,97 @@ test("audit takes a board's own status field and done option, and refuses ones i
   );
   assert.throws(() => run(["audit", ...board, "--status-field", "Stage"], options), /"Done" is not a Stage option/);
   assert.throws(() => run(["audit", ...board, "--status-field", "Blocked by"], options), /single-select/);
+});
+
+test("audit lists open items past their Due date and those due within a week", () => {
+  const fake = fakeBoard();
+  fake.items.PVTI_1.values.Due = "2026-11-20";
+  fake.items.PVTI_2.values.Due = "2026-11-01";
+  fake.items.PVTI_5.values.Due = "2026-11-02";
+  fake.items.PVTI_draft.values.Due = "2026-11-30";
+  fake.items.PVTI_4.values.Due = "2026-11-23";
+  const deps = { graphql: fake.graphql, sleep: noSleep, today: "2026-11-23" };
+  const result = run(["audit", ...board], deps);
+  assert.deepEqual(result.due, { field: "Due", today: "2026-11-23", soonDays: 7 });
+  assert.deepEqual(
+    result.overdue.map((item) => [item.number, item.due, item.daysLate]),
+    [[1, "2026-11-20", 3]],
+    "a closed item and a Done one are not overdue",
+  );
+  assert.deepEqual(
+    result.dueSoon.map((item) => item.title),
+    ["An idea"],
+    "a merged pull request is not due",
+  );
+  fake.items.PVTI_4.values = {};
+  fake.items.PVTI_1.values.Due = "2026-11-23";
+  const soon = run(["audit", ...board], deps);
+  assert.deepEqual(soon.overdue, []);
+  assert.deepEqual(
+    soon.dueSoon.map((item) => [item.number ?? item.title, item.due, item.daysLeft]),
+    [
+      [1, "2026-11-23", 0],
+      ["An idea", "2026-11-30", 7],
+    ],
+    "due today and due in seven days are both soon, earliest first, drafts included",
+  );
+  fake.items.PVTI_draft.values.Due = "2026-12-01";
+  assert.deepEqual(
+    run(["audit", ...board], deps).dueSoon.map((item) => item.number),
+    [1],
+    "eight days out is not soon",
+  );
+});
+
+test("audit's Due field is taken when the board has one, named with --due-field, and refused when it is not a date", () => {
+  const fake = fakeBoard();
+  const deps = { graphql: fake.graphql, sleep: noSleep, today: "2026-11-23" };
+  fake.items.PVTI_1.values.Due = "2026-11-01";
+  fake.rename("Due", "Deadline");
+  const unnamed = run(["audit", ...board], deps);
+  assert.equal(unnamed.due, null, "a board with no Due field has no due lists");
+  assert.equal("overdue" in unnamed, false);
+  const named = run(["audit", ...board, "--due-field", "deadline"], deps);
+  assert.equal(named.due.field, "Deadline");
+  assert.deepEqual(
+    named.overdue.map((item) => item.number),
+    [1],
+  );
+  assert.throws(() => run(["audit", ...board, "--due-field", "Due"], deps), /no field "Due"/);
+  assert.throws(() => run(["audit", ...board, "--due-field", "Blocked by"], deps), /date field/);
+  assert.throws(() => parseArgs(["get", ...board, "--item", "acme/app#1", "--due-field", "Due"]), /only audit/);
+});
+
+test("audit finds the board's Due field whatever its case and spacing", () => {
+  const fake = fakeBoard();
+  const deps = { graphql: fake.graphql, sleep: noSleep, today: "2026-11-23" };
+  fake.items.PVTI_1.values.Due = "2026-11-20";
+  fake.rename("Due", "DUE ");
+  const result = run(["audit", ...board], deps);
+  assert.equal(result.due?.field, "DUE ");
+  assert.deepEqual(
+    result.overdue.map((item) => [item.number, item.daysLate]),
+    [[1, 3]],
+  );
+});
+
+test("a board whose Due is not a date still audits, with no due lists, unless --due-field names it", () => {
+  const fake = fakeBoard();
+  const deps = { graphql: fake.graphql, sleep: noSleep, today: "2026-11-23" };
+  fake.retype("Due", "TEXT");
+  fake.items.PVTI_1.values.Due = "soon";
+  const result = run(["audit", ...board, "--repo", "acme/app"], deps);
+  assert.equal(result.due, null);
+  assert.match(result.dueNote, /Due is a text field, not a date/);
+  assert.equal("overdue" in result, false);
+  assert.deepEqual(
+    result.closedNotDone.map((item) => item.number),
+    [2, 4],
+    "the rest of the audit is still there",
+  );
+  assert.deepEqual(
+    result.missing.map((issue) => issue.number),
+    [3],
+  );
+  assert.throws(() => run(["audit", ...board, "--due-field", "Due"], deps), /Due is a text field; --due-field names a date field/);
 });

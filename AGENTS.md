@@ -44,9 +44,13 @@ configured, or installed.
 - `settings/agents-md.md` also holds the `mattpocock/skills` snapshot every consumer installs: its
   commit and skill list are in the `shared-skills` block's install command.
 - A skill's helper script (`skills/handoff/handoff-map.mjs`, `skills/end-session/board.mjs`,
-  `skills/land/land.mjs`, `skills/dependabot/dependabot.mjs`) lives in its skill's folder and
-  installs with it, unlike the scripts above; its test sits in `scripts/` so the test does not
-  install.
+  `skills/land/land.mjs`, `skills/dependabot/dependabot.mjs`, `skills/test-prover/mutate.mjs`)
+  lives in its skill's folder and installs with it, unlike the scripts above; its test sits in
+  `scripts/` so the test does not install.
+- `test-prover` and `ci-triage` run in a forked subagent (`context: fork` in their frontmatter),
+  and every forked skill and agent file takes `model: inherit`, never a pinned model (Decision 14
+  in `docs/design.md`). Their bodies still say what to do where the harness cannot fork (Codex):
+  follow them inline.
 - A skill derived from someone else's keeps their license notice inside its own folder (as
   `skills/handoff/LICENSE`), since the folder installs without the rest of this repository.
 - `npm run check` (CI runs it) must pass before a commit. CI also runs

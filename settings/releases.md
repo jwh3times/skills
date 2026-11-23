@@ -5,7 +5,7 @@ setting below is a `##` heading in that file.
 
 ## Scheme
 
-- **Read by:** land, ship
+- **Read by:** land, records-audit, ship
 - **Value:** one of
   - `per-merge` — every merge to `main` is tagged with the next version, and the changelog gives
     each merge a dated section for the version it will mint. `Unreleased` stays as an empty
@@ -27,7 +27,7 @@ setting below is a `##` heading in that file.
 
 ## Skipped tags
 
-- **Read by:** ship
+- **Read by:** records-audit, ship
 - **Value:** `per-merge` only; otherwise `none`. What happens to a tag minted by a merge that wrote
   no changelog section (a dependency bot's PR):
   - `backfill` — `ship` adds a dated section for it from the tagged merge;
