@@ -90,7 +90,7 @@ export function parsePayload(text) {
   try {
     data = JSON.parse(text);
   } catch (error) {
-    throw new Error(`stdin is not a JSON hook payload (${error.message})`);
+    throw new Error(`stdin is not a JSON hook payload (${error.message})`, { cause: error });
   }
   if (!data || typeof data !== "object" || Array.isArray(data)) {
     throw new Error("stdin is not a JSON hook payload object");
@@ -124,7 +124,16 @@ function readHeredocBodies(text, i, heredocs) {
   return i;
 }
 
-const HEREDOC_START = /^<<(-?)[ \t]*(?:'([^']*)'|"([^"]*)"|\\?([^\s;&|<>()'"]+))/;
+// Sticky (`y`) patterns run at an index of the text itself, never on a copy of its tail, so a long
+// command costs linear time however many of them it holds.
+const HEREDOC_START = /<<(-?)[ \t]*(?:'([^']*)'|"([^"]*)"|\\?([^\s;&|<>()'"]+))/y;
+const FD_NUMBER = /\d+|-/y;
+const VARIABLE = /\$(?:[\w:]+|[@*#?$!^-])/y;
+
+function execAt(pattern, text, index) {
+  pattern.lastIndex = index;
+  return pattern.exec(text);
+}
 
 // The index of the `close` matching an `open` already consumed before `start`, skipping quoted
 // text, comments and heredoc bodies, so `$(cat <<'EOF' ... EOF)` with an apostrophe or a `)` in
@@ -132,24 +141,24 @@ const HEREDOC_START = /^<<(-?)[ \t]*(?:'([^']*)'|"([^"]*)"|\\?([^\s;&|<>()'"]+))
 // backtick, where a backslash is a path.
 function scanClose(text, start, open, close, shell) {
   const ps = shell === "powershell";
-  const escape = ps ? "`" : "\\";
+  const escapeChar = ps ? "`" : "\\";
   const heredocs = [];
   let depth = 1;
   for (let j = start; j < text.length; j += 1) {
     const c = text[j];
-    if (c === escape) j += 1;
+    if (c === escapeChar) j += 1;
     else if (!ps && c === "$" && text[j + 1] === "'") {
       for (j += 2; j < text.length && text[j] !== "'"; j += 1) if (text[j] === "\\") j += 1;
     } else if (c === "'") {
       j = text.indexOf("'", j + 1);
       if (j < 0) break;
     } else if (c === '"') {
-      for (j += 1; j < text.length && text[j] !== '"'; j += 1) if (text[j] === escape) j += 1;
+      for (j += 1; j < text.length && text[j] !== '"'; j += 1) if (text[j] === escapeChar) j += 1;
     } else if (c === "#" && /[\s(;&|]/.test(text[j - 1] ?? " ")) {
       const end = text.indexOf("\n", j);
       j = (end < 0 ? text.length : end) - 1;
     } else if (!ps && c === "<" && text[j + 1] === "<" && text[j + 2] !== "<") {
-      const heredoc = HEREDOC_START.exec(text.slice(j));
+      const heredoc = execAt(HEREDOC_START, text, j);
       if (heredoc) {
         heredocs.push({ delimiter: heredoc[2] ?? heredoc[3] ?? heredoc[4], strip: heredoc[1] === "-" });
         j += heredoc[0].length - 1;
@@ -161,6 +170,12 @@ function scanClose(text, start, open, close, shell) {
     else if (c === close && --depth === 0) return j;
   }
   throw new ParseError(`unclosed ${open}`);
+}
+
+// A fresh id for a subshell or nested script, which scopes the `cd` inside it.
+function nextId(ids) {
+  ids.n += 1;
+  return ids.n;
 }
 
 // Splits a script into raw simple commands: words with quotes removed (a word built from `$x` or
@@ -218,15 +233,21 @@ function lex(text, shell, group, ids) {
   const readRedirect = () => {
     begin();
     word = null; // a file-descriptor number before the operator
-    if (!ps && text.startsWith("<<<", i)) return ((redirect = "herestring"), i + 3);
-    if (!ps && text.startsWith("<<-", i)) return ((redirect = { heredoc: true, strip: true }), i + 3);
-    if (!ps && text.startsWith("<<", i)) return ((redirect = { heredoc: true, strip: false }), i + 2);
+    if (!ps && text.startsWith("<<<", i)) {
+      redirect = "herestring";
+      return i + 3;
+    }
+    if (!ps && text.startsWith("<<", i)) {
+      const strip = text[i + 2] === "-";
+      redirect = { heredoc: true, strip };
+      return i + (strip ? 3 : 2);
+    }
     let j = i;
     if (text[j] === "&" || text[j] === "*") j += 1;
     j += 1;
     if (text[j] === ">" || text[j] === "|") j += 1;
     if (text[j] === "&") {
-      const fd = /^(\d+|-)/.exec(text.slice(j + 1));
+      const fd = execAt(FD_NUMBER, text, j + 1);
       if (fd) return j + 1 + fd[0].length;
       j += 1;
     }
@@ -320,7 +341,7 @@ function lex(text, shell, group, ids) {
       append(text.slice(i, close + 1), true);
       i = close + 1;
     } else if (c === "$" && /[\w@*#?$!:^-]/.test(next ?? "")) {
-      const name = /^\$(?:[\w:]+|[@*#?$!^-])/.exec(text.slice(i))[0];
+      const name = execAt(VARIABLE, text, i)[0];
       append(name, true);
       i += name.length;
     } else if (c === "#" && word === null) {
@@ -371,7 +392,7 @@ function lex(text, shell, group, ids) {
       i = close + 1;
     } else if (c === "(" || c === ")") {
       endCommand();
-      if (!ps && c === "(") groups.push((ids.n += 1));
+      if (!ps && c === "(") groups.push(nextId(ids));
       else if (!ps && groups.length > group.length) groups.pop();
       i += 1;
     } else if ((c === "{" || c === "}") && word === null && (ps || next === undefined || /[\s;]/.test(next))) {
@@ -492,7 +513,7 @@ export function splitCommands(text, shell = "bash", depth = 0, group = [], ids =
   const out = [];
   for (const raw of lex(text, shell, group, ids)) {
     for (const inner of raw.nested) {
-      out.push(...splitCommands(inner, shell, depth + 1, [...raw.group, (ids.n += 1)], ids));
+      out.push(...splitCommands(inner, shell, depth + 1, [...raw.group, nextId(ids)], ids));
     }
     const words = stripPrefixes(raw.words);
     if (words.length === 0 && raw.writes.length === 0) continue;
@@ -508,7 +529,7 @@ export function splitCommands(text, shell = "bash", depth = 0, group = [], ids =
       heredocs: raw.heredocs,
     });
     for (const script of wrappedScripts(program, words.slice(1).map((w) => w.text), raw)) {
-      out.push(...splitCommands(script.text, script.shell, depth + 1, [...raw.group, (ids.n += 1)], ids));
+      out.push(...splitCommands(script.text, script.shell, depth + 1, [...raw.group, nextId(ids)], ids));
     }
   }
   return out;
@@ -730,7 +751,7 @@ export function classifyGh(args) {
     const arg = args[i];
     if (arg.startsWith("-")) {
       flags.push(arg.split("=")[0]);
-      if (GH_VALUE_FLAGS.has(arg) || /^-[A-Za-z]*[RbFtA]$/.test(arg)) i += 1;
+      if (GH_VALUE_FLAGS.has(arg) || (shortFlags(arg) && "RbFtA".includes(arg.at(-1)))) i += 1;
     } else positional.push(arg);
   }
   if (positional[0] !== "pr" || positional[1] !== "merge") return [];
@@ -770,7 +791,9 @@ export function windowsWarnings(command, { platform = process.platform, tool = "
   if (program === "gh" && words.some((w) => w === "--body" || w.startsWith("--body="))) {
     warn("W4", "`gh --body` with inline text: the Bash tool mangles backslashes and backticks in it. Write the body to a file and pass `--body-file`.");
   }
-  if (/^(grep|egrep|rg)$/.test(program) && /\$'[^']*\\(x0+|0+)(?![0-9])/.test(raw)) {
+  // Each `$'...'` body is found with a split, then checked for a NUL escape with bounded counts.
+  const ansiBodies = raw.split("$'").slice(1).map((rest) => rest.split("'")[0]);
+  if (/^(grep|egrep|rg)$/.test(program) && ansiBodies.some((body) => /\\(?:x0{1,2}|0{1,3})(?![0-9])/.test(body))) {
     warn("W5", "`grep $'\\x00'` checks nothing here: bash makes the pattern empty, so it matches every line. Use `grep -cP '\\x00' <file>` (0 is clean).");
   }
   if (bare && (program === "python" || program === "python3")) {
@@ -781,11 +804,24 @@ export function windowsWarnings(command, { platform = process.platform, tool = "
 
 // --- Edits ---------------------------------------------------------------------------------------
 
+// The `<!-- shared:X -->` ... `<!-- /shared:X -->` blocks in LF text, found line by line: each
+// opener closes at the first matching closer after it, and an opener inside a closed block is
+// part of that block, as with sync-agents.mjs. No regex runs over the whole text.
 function sharedBlocks(text) {
   const blocks = [];
-  const pattern = /^<!-- shared:([a-z-]+) -->\n(?:[\s\S]*?\n)?<!-- \/shared:\1 -->$/gm;
-  for (const match of text.matchAll(pattern)) {
-    blocks.push({ name: match[1], start: match.index, end: match.index + match[0].length, text: match[0] });
+  const pending = new Map();
+  let offset = 0;
+  for (const line of text.split("\n")) {
+    const end = offset + line.length;
+    const opener = /^<!-- shared:([a-z-]+) -->$/.exec(line);
+    const closer = /^<!-- \/shared:([a-z-]+) -->$/.exec(line);
+    if (opener && !pending.has(opener[1])) pending.set(opener[1], offset);
+    else if (closer && pending.has(closer[1])) {
+      const start = pending.get(closer[1]);
+      blocks.push({ name: closer[1], start, end, text: text.slice(start, end) });
+      for (const [name, at] of pending) if (at >= start) pending.delete(name);
+    }
+    offset = end + 1;
   }
   return blocks;
 }
@@ -918,10 +954,13 @@ export function writtenPaths(command) {
   let target = null;
   for (let i = 0; i < args.length; i += 1) {
     const { text } = args[i];
-    if (text === "-t" || text === "--target-directory") target = args[(i += 1)] ?? null;
-    else if (text.startsWith("--target-directory=")) target = { ...args[i], text: text.slice(19) };
+    if (text === "-t" || text === "--target-directory") {
+      target = args[i + 1] ?? null;
+      i += 1;
+    } else if (text.startsWith("--target-directory=")) target = { ...args[i], text: text.slice(19) };
     else if (PATH_PARAMETERS.test(text)) {
-      if (args[i + 1]) named.push(args[(i += 1)]);
+      if (args[i + 1]) named.push(args[i + 1]);
+      i += 1;
     } else if (text.startsWith("-")) {
       // A PowerShell parameter that is not a switch takes the next word as its value.
       if (shell === "powershell" && !PS_SWITCHES.test(text) && args[i + 1] && !args[i + 1].text.startsWith("-")) i += 1;
@@ -980,10 +1019,14 @@ export function parseGuardSettings(text, file = SETTINGS_FILE) {
   };
   text.split(/\r?\n/).forEach((line, index) => {
     const n = index + 1;
-    const heading = /^(#{1,6})\s+(.*?)\s*#*\s*$/.exec(line);
+    const heading = /^(#{1,6})[ \t]+(.*)$/.exec(line);
     if (heading) {
       close();
-      section = heading[1] === "##" && SECTIONS.has(heading[2]) ? heading[2] : null;
+      // A closing run of `#` is not part of the title; trimmed by hand, not by an overlapping regex.
+      let title = heading[2].trim();
+      while (title.endsWith("#")) title = title.slice(0, -1);
+      title = title.trim();
+      section = heading[1] === "##" && SECTIONS.has(title) ? title : null;
       if (section && seen.has(section)) throw new Error(`${file}:${n}: '## ${section}' appears twice`);
       if (section) seen.add(section);
       state = { line: n, none: false, count: 0 };
@@ -1001,7 +1044,7 @@ export function parseGuardSettings(text, file = SETTINGS_FILE) {
       state.none = true;
       return;
     }
-    const bullet = /^[-*]\s+`(.+?)`\s+(?:—|–|--?)\s+(\S.*)$/.exec(line);
+    const bullet = /^[-*][ \t]+`([^`]+)`[ \t]+(?:—|–|--?)[ \t]+(\S.*)$/.exec(line);
     if (bullet) {
       if (state.none) throw new Error(`${file}:${n}: '## ${section}' says \`none\` and also lists rules`);
       let regex;
@@ -1010,7 +1053,7 @@ export function parseGuardSettings(text, file = SETTINGS_FILE) {
         regex = new RegExp(bullet[1]);
         folded = new RegExp(bullet[1], "i");
       } catch (error) {
-        throw new Error(`${file}:${n}: invalid regex \`${bullet[1]}\`: ${error.message}`);
+        throw new Error(`${file}:${n}: invalid regex \`${bullet[1]}\`: ${error.message}`, { cause: error });
       }
       last = { pattern: bullet[1], regex, folded, reason: bullet[2].trim(), line: n };
       settings[SECTIONS.get(section)].push(last);
@@ -1133,9 +1176,28 @@ function classifyShell(text, shell, tool, cwd, ctx, settings) {
   return findings;
 }
 
-// A git or gh subcommand at the start of a statement, past the prefixes that only run it.
-const RISKY_STATEMENT =
-  /^(?:[A-Za-z_]\w*=\S*\s+|(?:sudo|env|command|exec|nohup|time)\s+)*(?:\S*[\\/])?(?:git(?:\.exe)?(?:\s+-[Cc]\s+\S+|\s+--?[\w-]+(?:=\S*)?)*\s+(?:push|checkout|restore|reset|clean|branch|switch|rm)\b|gh(?:\.exe)?(?:\s+-R\s+\S+)?\s+pr\s+merge\b)/;
+const STATEMENT_PREFIXES = new Set(["sudo", "env", "command", "exec", "nohup", "time"]);
+const RISKY_GIT = /^(push|checkout|restore|reset|clean|branch|switch|rm)(\W|$)/;
+
+// True when a statement (words joined by single spaces) starts with a risky git or gh subcommand,
+// past the prefixes that only run it. Walked word by word, never by one regex over the statement,
+// so an adversarial run of options costs linear time (CodeQL js/redos).
+function startsRisky(statement) {
+  const words = statement.split(" ");
+  let i = 0;
+  while (i < words.length && (ASSIGNMENT.test(words[i]) || STATEMENT_PREFIXES.has(words[i]))) i += 1;
+  const program = programName(words[i] ?? "");
+  i += 1;
+  if (program === "git") {
+    while (i < words.length && words[i].startsWith("-")) i += words[i] === "-C" || words[i] === "-c" ? 2 : 1;
+    return RISKY_GIT.test(words[i] ?? "");
+  }
+  if (program === "gh") {
+    if (words[i] === "-R") i += 2;
+    return words[i] === "pr" && /^merge(\W|$)/.test(words[i + 1] ?? "");
+  }
+  return false;
+}
 
 // Text it cannot parse is never denied, only asked about. It is cut into rough statements, and
 // one asks when it starts with a risky git or gh subcommand or matches a repository rule, so a
@@ -1146,7 +1208,7 @@ function unparsedFindings(text, why, settings) {
     .map((statement) => statement.trim().replace(/\s+/g, " "))
     .filter(Boolean);
   const findings = [];
-  const risky = statements.find((statement) => RISKY_STATEMENT.test(statement));
+  const risky = statements.find(startsRisky);
   if (risky) {
     findings.push(finding("ask", "A5", `Could not parse this command (${why}), and it runs \`${risky.slice(0, 80)}\`.`));
   }

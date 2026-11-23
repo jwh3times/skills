@@ -362,7 +362,7 @@ export function mergeClaudeSettings(raw, file = settingsTarget) {
   try {
     settings = text === null ? {} : JSON.parse(text);
   } catch (error) {
-    throw new Error(`${file}: invalid JSON (${error.message})`);
+    throw new Error(`${file}: invalid JSON (${error.message})`, { cause: error });
   }
   if (!isObject(settings)) throw new Error(`${file}: expected a JSON object`);
   const before = JSON.stringify(settings);

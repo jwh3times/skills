@@ -674,6 +674,11 @@ per-project install and the shared scripts are recorded under Architecture.
       2026-11-23) says exec form substitutes `${CLAUDE_PROJECT_DIR}` into each argument; a real
       session in this repository confirms it before consumers take it, with shell form
       `node "$CLAUDE_PROJECT_DIR/scripts/guard.mjs"` the fallback.
+    - **Clean under every consumer's checks** (2026-11-23, from the first take PRs): consumers run
+      CodeQL, oxlint and Biome over the scripts they copy, so `guard.mjs` scans commands and files
+      word by word or with sticky, non-overlapping patterns (CodeQL `js/redos` flagged one regex
+      as exponential), a rethrown error carries its `cause` (oxlint `preserve-caught-error`), and
+      no assignment sits inside an expression (Biome `noAssignInExpressions`).
     - **Out of scope:** Codex hooks (Codex parses `ask` but does not support it yet), and folding
       valleys-at-ashebrook-hoa's production-confirmation hook into `guard.md`; it stays its own.
 

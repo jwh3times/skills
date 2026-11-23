@@ -4,7 +4,6 @@ import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { fileURLToPath } from "node:url";
 
 import {
   classifyEdit,
@@ -22,7 +21,9 @@ import {
   windowsWarnings,
 } from "./guard.mjs";
 
-const guardPath = fileURLToPath(new URL("./guard.mjs", import.meta.url));
+// Node's own `import.meta.dirname`; a runner that leaves it unset (Vitest gives `import.meta.url` a
+// non-file scheme) runs from the repository root, where the scripts are in `scripts/`.
+const guardPath = path.join(import.meta.dirname ?? path.resolve("scripts"), "guard.mjs");
 
 // Every side effect the guard has, faked: files and folders by path, and git answers by
 // subcommand (`status` gives porcelain output, `rev-parse` the branch; missing means git failed).
@@ -666,6 +667,70 @@ test("finding 10: cmd //c, Git Bash's spelling of cmd /c, is unwrapped", () => {
   for (const command of ["cmd //c git push -f origin x", "cmd.exe /C git push -f origin x", "cmd /s //C git push -f origin x"]) {
     assert.deepEqual(rules(bash(command)), ["D5"], command);
   }
+});
+
+// --- Linear time on adversarial input (CodeQL js/redos) ------------------------------------------
+
+function timed(fn) {
+  const started = performance.now();
+  const value = fn();
+  return { value, ms: performance.now() - started };
+}
+
+test("the unparseable-text check is linear on CodeQL's adversarial strings, and still decides right", () => {
+  const shapes = [`git${" -C --".repeat(5000)}`, `git -${"-- -".repeat(5000)}`];
+  for (const shape of shapes) {
+    const plain = timed(() => bash(`${shape} 'open`));
+    assert.ok(plain.ms < 200, `${shape.slice(0, 12)}...: ${plain.ms.toFixed(0)} ms`);
+    assert.equal(plain.value, null);
+    const risky = timed(() => bash(`${shape} push --force 'open`));
+    assert.ok(risky.ms < 200, `${shape.slice(0, 12)}... push: ${risky.ms.toFixed(0)} ms`);
+    assert.deepEqual(rules(risky.value), ["A5"]);
+  }
+  // The same subcommands are still found past prefixes, paths, -C and -c.
+  for (const command of ["FOO=1 sudo /usr/bin/git -C x -c a=b reset --hard 'open", "gh -R o/r pr merge 1 'open", "git.exe push 'open"]) {
+    assert.deepEqual(rules(bash(command)), ["A5"], command);
+  }
+  assert.equal(bash("git -C x status 'open"), null);
+});
+
+test("the other text-scanning paths stay fast on long adversarial input", () => {
+  const n = 20000;
+  const files = { "/repo/AGENTS.md": `${"<!-- shared:a -->\n".repeat(n)}text\n` };
+  const cases = [
+    [
+      "W5 grep",
+      () => {
+        const raw = `grep -c ${"$'\\01".repeat(n)}`;
+        const command = { program: "grep", words: ["grep", "-c"], raw, heredocs: [] };
+        assert.deepEqual(windowsWarnings(command, { platform: "win32", tool: "Bash" }), []);
+      },
+    ],
+    ["variables", () => splitCommands(`echo ${"$a".repeat(n)}`)],
+    ["heredoc starts in $()", () => bash(`echo "$(cat ${"<<".repeat(n)}`)],
+    ["guard.md heading", () => parseGuardSettings(`## ${" ".repeat(n)}#${" ".repeat(n)}x\n`)],
+    ["guard.md bullet", () => assert.throws(() => parseGuardSettings(`## Deny commands\n\n- \`${"` ".repeat(n)}\n`))],
+    ["AGENTS.md openers", () => edit("Write", { file_path: "/repo/AGENTS.md", content: "x" }, { files })],
+  ];
+  for (const [name, fn] of cases) {
+    const { ms } = timed(fn);
+    assert.ok(ms < 200, `${name}: ${ms.toFixed(0)} ms`);
+  }
+});
+
+test("a shared block is found past an opener that never closes, and an opener inside a block is part of it", () => {
+  const unclosed = ["<!-- shared:a -->", "stray", "<!-- shared:b -->", "body", "<!-- /shared:b -->", ""].join("\n");
+  const files = { "/repo/AGENTS.md": unclosed };
+  assert.deepEqual(rules(edit("Edit", { file_path: "/repo/AGENTS.md", old_string: "body", new_string: "x" }, { files })), ["D4"]);
+  assert.deepEqual(rules(edit("Edit", { file_path: "/repo/AGENTS.md", old_string: "stray", new_string: "x" }, { files })), []);
+});
+
+test("a rethrown error keeps the error it replaces as its cause", () => {
+  assert.throws(() => parsePayload("{"), (error) => error.cause instanceof SyntaxError);
+  assert.throws(
+    () => parseGuardSettings("## Deny commands\n\n- `(` — bad.\n"),
+    (error) => /invalid regex/.test(error.message) && error.cause instanceof SyntaxError,
+  );
 });
 
 test("classifyEdit needs no settings argument", () => {

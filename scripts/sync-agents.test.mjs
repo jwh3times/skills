@@ -14,7 +14,6 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { fileURLToPath } from "node:url";
 
 import {
   checkGuardSettings,
@@ -407,7 +406,9 @@ test("the setting's none leaves AGENTS.md alone, whatever the block file holds",
 
 // --- .claude/settings.json --------------------------------------------------------------------
 
-const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
+// Node's own `import.meta.dirname`; a runner that leaves it unset (Vitest gives `import.meta.url` a
+// non-file scheme) runs from the repository root, where the scripts are in `scripts/`.
+const scriptsDir = import.meta.dirname ?? path.resolve("scripts");
 const settingsFile = ".claude/settings.json";
 
 function withGuard(fn) {
@@ -455,7 +456,10 @@ test("an empty object or a permissions-only file keeps its keys and gains the ho
   const merged = JSON.parse(mergeClaudeSettings('{"permissions":{"allow":["Bash(ls:*)"]}}'));
   assert.deepEqual(Object.keys(merged), ["permissions", "hooks"]);
   assert.deepEqual(merged.permissions, { allow: ["Bash(ls:*)"] });
-  assert.throws(() => mergeClaudeSettings("{ nope"), /settings\.json: invalid JSON/);
+  assert.throws(
+    () => mergeClaudeSettings("{ nope"),
+    (error) => /settings\.json: invalid JSON/.test(error.message) && error.cause instanceof SyntaxError,
+  );
   assert.throws(() => mergeClaudeSettings('{"hooks":{"PreToolUse":{}}}'), /must be an array/);
 });
 
