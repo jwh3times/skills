@@ -13,12 +13,15 @@ installed here, joining the shared install command, which each consumer takes at
 `land` written 2026-11-21 (Decision 11, the `merging.md` catalog) and joined the same way.
 `dependabot` written 2026-11-22 (Decision 12, the `dependabot.md` catalog) and joined the same way.
 `scripts/guard.mjs` written 2026-11-23 (Decision 13, the `guard.md` catalog), a canonical script
-every consumer carries, which `sync-agents.mjs` registers as a hook.
+every consumer carries, which `sync-agents.mjs` registers as a hook. `test-prover`, `ci-triage` and
+`records-audit` written 2026-11-23 (Decision 14, the `test-proof.md` catalog), with the board's
+`Due` field, and joined the shared install command the same way.
 
 ## Goal
 
 Publish the skills the user wrote — `ship`, `land`, `dependabot`, `end-session`, `handoff`,
-`lets-go`, `docs-updater` and `what-next` — from this one repository, installable into any
+`lets-go`, `docs-updater`, `what-next`, `test-prover`, `ci-triage` and `records-audit` — from this
+one repository, installable into any
 repository. Installing adapts a skill to its repository, but **by writing settings, not by editing
 the skill**: the skill body stays identical everywhere so fixes flow to every repository by
 re-running the install (see Install and update).
@@ -115,7 +118,7 @@ PG PressGolf, VA valleys-at-ashebrook-hoa; TI TirelessInvest joined after this s
 column in it. Kind: **value** (command, path, name), **toggle** (a shared
 step on or off), **step** (selects one of several implementations), **hook** (repo-only steps).
 
-### `docs/agents/workspace.md` — new; read by every skill but `land`, `dependabot` and `what-next`
+### `docs/agents/workspace.md` — new; read by every skill but `land`, `dependabot`, `what-next`, `test-prover` and `ci-triage`
 
 | Setting | Found | Kind |
 | --- | --- | --- |
@@ -175,6 +178,12 @@ valleys-at-ashebrook-hoa#579. No settings changed, since every consumer already 
 Between the two rollouts, causet and TI changed release schemes (see Decision 8), so both needed a
 changelog section the first rollout did not.
 
+**A `Due` date field** (2026-11-23, Decision 14). `Board fields` documents an optional `DATE`
+field, `Due`, set only for a real deadline. `board.mjs audit` reports `overdue` and `dueSoon` (seven
+days) from it, the follow-up `## Procedure` sets it when a human action has one, `what-next` puts
+overdue `Needs you` items first, and `records-audit` reports what is overdue and the deadlines
+still hiding in issue titles.
+
 Labels are their own topic since Wave 4 (`settings/triage-labels.md`). When surveyed, they stayed in
 `triage-labels.md`, or in `issue-tracker.md`'s own section where a repository kept them there (CH).
 Extras beyond the five canonical labels: CA `human-action-required`; LB `blocked-by-human`,
@@ -184,7 +193,7 @@ Extras beyond the five canonical labels: CA `human-action-required`; LB `blocked
 
 Today: `human-actions.md` (AR), `human-followups.md` (GT), `human-follow-up.md` (MA),
 `docs/human-followups.md` (CA), an anchor in `issue-tracker.md` (CH, LB). Read by ship, end-session,
-docs-updater.
+docs-updater and records-audit.
 
 | Setting | Found |
 | --- | --- |
@@ -269,7 +278,7 @@ has a default, taken from the `dev-flow` topic, and its heading is written only 
 | Hook: review before PR | NC's trigger table; PG's impact flags feeding the PR body |
 | Hook: issue-linkage warnings | LB (board, Track/Gate, private-tracker leak), PG, NC (`Closes #N`) |
 
-### `docs/agents/merging.md` — read by `land`, and its `Guide` by `dependabot`
+### `docs/agents/merging.md` — read by `land`, and its `Guide` by `dependabot` and `ci-triage`
 
 As built (2026-11-21, Decision 11): `settings/merging.md` holds `Guide`, `Merge command`,
 `Catch-up`, `Dependabot catch-up`, `Release workflow` and `Deploys`, beside each repository's own
@@ -321,12 +330,24 @@ NU errors, Go's `/vN` paths); the release notes of every major crossed; no specu
 comment per PR, found again by its marker; a red that `main` shares reported once for the
 repository (LeaseBook, 2026-11-21).
 
+### `docs/agents/test-proof.md` — test-prover-only
+
+As built (2026-11-23, Decision 14): `settings/test-proof.md` holds `Test commands` (per stack, the
+folder, which files are tests, the command that runs one file or one test, how its output counts
+the tests, and what a scratch worktree needs: dependency folders to link or a restore command),
+`Zero-match signature` (lines beyond the ones `mutate.mjs` knows, default `none`) and `Guide` (the
+repository's own list of ways a test passes vacuously, default `docs/agents/verification.md` when
+it exists). Each repository's file is built at rollout from its `ship.md` `Fast checks` and its
+testing docs. The 2026-11-17 audits are the evidence: LeaseBook listed about 21 "false green"
+traps, valleys-at-ashebrook-hoa seven ways a test had been vacuous, and GuardianTracker broke each
+guard by hand on every fix to see its test fail.
+
 ### `docs/agents/dev-flow.md`, `triage-labels.md`, and the `agents-md` text
 
 Added in Wave 4 (see Second survey): `settings/dev-flow.md` and `settings/triage-labels.md` give
 each repository's file its shared defaults, and `settings/agents-md.md` holds the `AGENTS.md` blocks,
-with no settings file of its own. `ship` installs all three; `end-session` installs
-`triage-labels` too, and `what-next` `dev-flow`, `triage-labels` and `handoffs`.
+with no settings file of its own. `ship` installs all three; `end-session` and `records-audit`
+install `triage-labels` too, and `what-next` `dev-flow`, `triage-labels` and `handoffs`.
 
 ### `docs/agents/guard.md` — read by `scripts/guard.mjs`, no skill
 
@@ -685,6 +706,79 @@ per-project install and the shared scripts are recorded under Architecture.
       `promise/always-return`).
     - **Out of scope:** Codex hooks (Codex parses `ask` but does not support it yet), and folding
       valleys-at-ashebrook-hoa's production-confirmation hook into `guard.md`; it stays its own.
+
+14. **Phase 4: tests proven, reds read, records audited, every agent on the caller's model**
+    (settled 2026-11-23). The 2026-11-17 audits found three gaps. Tests passed without catching
+    anything: LeaseBook listed about 21 "false green" traps, valleys-at-ashebrook-hoa seven ways a
+    test had been vacuous, and GuardianTracker broke each guard by hand on every fix. Red CI cost
+    context and judgement: holland-vip, PressGolf and Nearcited each asked for a read-only triager.
+    Records drifted and the human queue never drained: magic-agenda and valleys-at-ashebrook-hoa
+    found drifted boards, wiki pages and changelogs only when something broke, holland-vip's
+    token-rotation deadline sat in an issue title, and TirelessInvest had 26 `ready-for-human`
+    issues against 14 `ready-for-agent`.
+    - **Shared helpers are skills, not agent files.** `test-prover` and `ci-triage` are skills
+      with `context: fork`, as `docs-updater` became a skill (Decision 5): one body, installed by
+      the shared command, carrying its settings definitions and its helper, fixed here once. An
+      agent file is copied into each repository and drifts, and `sync-agents.mjs` turns it into
+      Codex TOML that drops its model. Claude Code runs a forked skill in a subagent of its own,
+      with `background: false` so the caller waits for its answer; the subagent starts without the
+      caller's conversation, so callers pass the target in the arguments. Codex loads the same
+      body as an ordinary skill, so each body says at the top to follow it inline where the
+      harness cannot fork.
+    - **Every agent and forked skill takes `model: inherit`.** In the user's words: "I don't want
+      any agent on sonnet. these agents should inherit the model that launched them." A subagent
+      with no `model` can fall back to `CLAUDE_CODE_SUBAGENT_MODEL`, so `inherit` is written
+      out: in both forked skills, in `records-audit` (not forked, so it keeps the session's
+      model), and in every consumer's `.claude/agents/*.md`, where 17 agents were pinned to
+      `sonnet` or `opus`. `sync-agents.mjs` drops `model` from the Codex TOML, so that side does
+      not change.
+    - **The implementer agent is dropped.** Its only reason was to run implementation on a pinned
+      Sonnet. With every agent on the caller's model, `/implement` in the session does the same
+      work with the session's context, and `test-prover` checks what an implementer's tests prove.
+    - **`test-prover`** works in a scratch worktree that `mutate.mjs setup` adds at `HEAD`, copying
+      the uncommitted work in byte for byte so it can run before a commit, and linking dependency
+      folders, which `teardown` unlinks before it removes the tree. `mutate.mjs` applies one exact
+      edit, or the base version of the fix's files, runs one test command in bash (Git Bash on
+      Windows, found from git's install, so one command line works on every machine) with its
+      process tree killed at a timeout or an interrupt, reads the test count and the zero-match
+      signatures of the common runners (a signature only where a runner prints it, at a line's
+      start, and never over a failing run that counted tests), then puts back each file's bytes
+      and checks their hash, CRLF included. A command that never ran or never finished on its own
+      is an `error`, never a red, so it proves nothing. It acts only on a worktree `setup` made
+      (its `test-prover-*` folder and manifest), never on another linked worktree, and never
+      writes through a folder linked from the checkout. It never
+      runs `git checkout --`, `restore`, `stash`, `reset` or `clean`: the guard (Decision 13)
+      asks before those on a dirty tree, and in the live checkout they would discard the work
+      under proof. It refuses a checkout's main worktree. The `mattpocock/skills` `/implement` and
+      `/code-review` are snapshots and stay unedited: the shared development-flow block tells the
+      agent to run `/test-prover` before `/implement` commits and in `/code-review`, and `ship`
+      runs it when a branch adds tests.
+    - **`ci-triage`** reads over REST first, since a cloud run answers GraphQL with 403 (Decision
+      12), and uses `land.mjs pr` only when it answers. It reads the failing step before the log,
+      matches the error against the `Guide`'s known reds, and compares with another attempt on
+      the same commit and with `main`, so a flake is called one only on identical code seen
+      passing. `land` acts only on a known red's remedy from the `Guide`; any other class stops
+      it, and "never re-run a red in the hope it passes" is unchanged. `dependabot` keeps a red
+      check dispositive and quotes the class in its verdict. Its step 0 is the one exception to
+      a skill stopping on a missing setting when no user can answer: it is read-only and forked,
+      so it runs on the defaults and names the settings it lacked in its report instead.
+    - **`records-audit` is local and not forked.** It may need the user to sign in to `gh` (the
+      `read:project` scope) or a secret store, and it reads the private trackers and wikis, which
+      a cloud routine cannot. It runs weekly, by hand or with the harness's recurring-task
+      command (Claude Code's `/loop 7d /records-audit`), and only reports, naming the command or
+      skill that fixes each finding. Its one file, the dated
+      report, goes in the repository's git folder (`<git common dir>/records-audit/<date>.md`):
+      never committed, so the tree stays clean and private findings stay on the machine; shared by
+      the checkout's worktrees; kept across sessions; and found by `what-next` with one git
+      command, which then says when the last audit is more than seven days old. Rejected: the
+      companion, where every run would leave an uncommitted file or need a commit, and the
+      session scratchpad, which the next session cannot see.
+    - **`Due` means a real deadline**: an expiry, a renewal, an offer or support window ending, a
+      date someone else set; never an aspirational one, or overdue stops meaning anything and
+      `what-next` would rank wishes above work. `board.mjs audit` reads the `Due` date field (or
+      `--due-field`) and lists `overdue` and `dueSoon` (seven days, by the local date) among open
+      items not done; the follow-up `## Procedure` sets it; `what-next` puts overdue `Needs you`
+      items first and ranks an overdue one above agent work, below only an active handoff.
 
 ## Convergence
 
