@@ -489,7 +489,8 @@ per-project install and the shared scripts are recorded under Architecture.
      fragments; each tag points at its merge commit, and one atomic push carries both. One
      version per merge, so `/land` can still confirm the tag a merge got. A merge with no fragment
      (a bot's, or a docs-only change) gets a one-bullet section from its PR title, so every tag has
-     a section and `Skipped tags` does not apply. **Amended 2026-11-18, while building it:** the
+     a section and `Skipped tags` does not apply; the title's names and technical words go in code
+     spans (Decision 12). **Amended 2026-11-18, while building it:** the
      tag was to point at the stamp commit, but when merges land together the stamp commits follow
      all of them, so a version would include a later PR's code. A tag on the merge commit is
      exactly what that merge deployed; its tree holds the fragment, and the release notes carry the
@@ -605,8 +606,19 @@ per-project install and the shared scripts are recorded under Architecture.
       posted still count.
     - **A fix on a Dependabot branch** waits for the user, and the branch is caught up by
       updating it from then on, never `@dependabot rebase`, which drops the fix (GT).
-    - **Open:** the stamped changelog line is never checked by the repository's linters. Guarding
-      it belongs in `stamp-changelog.mjs` or the release workflow, not here.
+    - **The stamped changelog line is made inert, in `stamp-changelog.mjs`** (2026-11-22). The
+      stamp commit is `[skip ci]`, so the line a PR title becomes is read by no check before
+      every later pull request's linters read it: LB #802's `Bump dotnet/aspnet ...` failed
+      LB's cspell on every open PR until LB #814 added the word. `inertTitle` puts the name
+      Dependabot's title shapes put after "Bump" or "Update" (or "Bump the ... group") and each
+      technical word (a path, a scoped package, a dotted name or version, a Markdown character)
+      in a code span, which spell checkers and Markdown formatters leave alone; prose and
+      existing spans are kept. Rejected: running each repository's linters in the release
+      workflow, since each consumer's `version.yml` is its own and its linters differ, and the
+      run would fail a release after the merge it describes. Checked against LB's cspell,
+      Prettier and markdownlint with LB's own titles: the old rendering fails on `aspnet` and
+      `codegen`, the new one passes. A prose word a spell check lacks, in a title with no
+      fragment, still gets through; such a PR is a person's, and `ship` writes it a fragment.
 
 ## Convergence
 
