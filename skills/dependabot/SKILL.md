@@ -61,7 +61,9 @@ out, and report, a PR that is a `draft`, carries a label containing `hold`, `do-
   asks. A `low-risk` verdict stops being current when it no longer names the PR's versions
   (Dependabot retargeted it) or when the PR's checks have failed since; report it as stale, never
   as a basis for landing, and review the PR again: the new verdict, the latest marked comment,
-  replaces it.
+  replaces it. When `parsed` is false, a completed manifest-diff review also needs the matching
+  `manifestReviewMarker` described in step 6; a change to the PR's base, head, title or body makes
+  that review stale.
 - **ROUTINE:** `kind` is `minor`, `patch`, `digest` or `removed`, and no update matches the `Review
   triggers`. It needs no release-note research, but step 3 still applies.
 - **CANDIDATE:** `kind` is `major`, `unknown`, `downgrade` or `suffix`, or an update matches the
@@ -147,6 +149,13 @@ Rules, each from a verdict that once went wrong:
 
 Write each verdict to its own file, named for the repository and the PR. It starts with `✅
 **VERIFIED LOW-RISK**` or `⚠️ **NEEDS EFFORT**`, and its last line is `marker`, exactly.
+
+When `parsed` is false, finish the manifest-diff review from step 2 and the checks above, naming
+every dependency's target version in the verdict. Then copy `manifestReviewMarker` exactly onto
+its own line immediately before the final `marker` line. It records the state that was reviewed,
+so the next unchanged run recognizes the completed fallback review instead of posting it again.
+If the PR changes during the review, run `list` again and review the changed state before copying
+its new marker.
 
 ## 7. Post the verdicts
 

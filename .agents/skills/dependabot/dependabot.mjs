@@ -12,6 +12,9 @@
 //     person has replaced the body. Pinned updates have `from: null` and `kind: "unknown"`.
 //     `parsed` is false when no updates were found or the title names more than were parsed;
 //     `kind` is then unknown, otherwise the furthest-reaching update's.
+//   - `manifestReviewMarker`: when `parsed` is false, a marker to copy into the verdict after
+//     reviewing every update from the manifest diff. It binds that review to this PR's base,
+//     head, title and body, so an unchanged follow-up run can recognize the completed review.
 //   - `ecosystem`, `directory` and `group`, from the branch name and the body.
 //   - `checks`: every check run and commit status on the current head, by its full sha, as
 //     `failed`, `cancelled`, `pending` and `passed`, with each failed check's run and job ids for
@@ -34,6 +37,7 @@
 // object, and exits 1 with `{ "error": ... }` on failure.
 
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -46,6 +50,7 @@ const PASSED = new Set(["success", "neutral", "skipped"]);
 // Furthest-reaching first: a PR's `kind` is the first of these any of its updates has.
 export const KIND_ORDER = ["major", "unknown", "downgrade", "suffix", "minor", "patch", "digest", "removed"];
 const MARKER = /Dependabot PR review by the (.+?) routine/;
+const MANIFEST_MARKER = /^<!-- dependabot-manifest-review: [a-f0-9]{64} -->$/;
 
 export class DependabotError extends Error {}
 
@@ -258,7 +263,7 @@ function versionNamed(text, version) {
   return text.includes(version);
 }
 
-export function readVerdict(comments, updates) {
+export function readVerdict(comments, updates, { parsed = true, manifestReviewMarker = null } = {}) {
   let verdict = null;
   const others = [];
   for (const comment of comments) {
@@ -266,12 +271,15 @@ export function readVerdict(comments, updates) {
     const marker = body.match(MARKER);
     if (marker) {
       const first = body.trimStart();
+      const lines = body.split(/\r?\n/);
+      const reviewText = lines.filter((line) => !MANIFEST_MARKER.test(line)).join("\n");
       verdict = {
         kind: first.startsWith("✅") ? "low-risk" : first.startsWith("⚠") ? "needs-effort" : "unknown",
         label: marker[1],
         url: comment.html_url ?? null,
         createdAt: comment.created_at ?? null,
-        versionsNamed: updates.length > 0 && updates.filter((update) => update.to).every((update) => versionNamed(body, update.to)),
+        versionsNamed: updates.filter((update) => update.to).every((update) => versionNamed(reviewText, update.to)) &&
+          (parsed ? updates.length > 0 : Boolean(manifestReviewMarker && lines.includes(manifestReviewMarker))),
       };
     } else if (comment.user?.type !== "Bot") {
       others.push({ author: comment.user?.login ?? null, createdAt: comment.created_at ?? null, body: body.slice(0, 500) });
@@ -306,15 +314,16 @@ function readOne(rest, sleep, options, pr) {
   const updates = parseUpdates(full.title, full.body);
   const expected = expectedUpdateCount(full.title);
   const parsed = updates.length > 0 && (expected === null || updates.length >= expected);
+  const reviewState = JSON.stringify([options.repo.toLowerCase(), full.number, full.base?.sha ?? null, head, full.title ?? "", full.body ?? ""]);
+  const manifestReviewMarker = parsed ? null : `<!-- dependabot-manifest-review: ${createHash("sha256").update(reviewState).digest("hex")} -->`;
   const checkRuns = rest(`repos/${options.repo}/commits/${head}/check-runs?per_page=100`).check_runs ?? [];
   const status = rest(`repos/${options.repo}/commits/${head}/status`);
   const commits = rest(`repos/${options.repo}/pulls/${full.number}/commits?per_page=100`);
   const comments = rest(`repos/${options.repo}/issues/${full.number}/comments?per_page=100`);
   const othersCommitted = commits.filter((commit) => commit.author?.login !== BOT).map((commit) => commit.sha);
   const checks = summarizeChecks(checkRuns, status);
-  const { verdict, comments: others } = readVerdict(comments, updates);
+  const { verdict, comments: others } = readVerdict(comments, updates, { parsed, manifestReviewMarker });
   if (verdict) {
-    verdict.versionsNamed &&= parsed;
     verdict.current = verdictCurrent(verdict, checks);
   }
   return {
@@ -331,6 +340,7 @@ function readOne(rest, sleep, options, pr) {
     ...describeBranch(full.head.ref, full.title, full.body),
     updates,
     parsed,
+    manifestReviewMarker,
     kind: parsed ? furthestKind(updates) : "unknown",
     mergeable: full.mergeable ?? null,
     mergeableState: full.mergeable_state ?? "unknown",

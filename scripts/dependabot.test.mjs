@@ -279,6 +279,89 @@ test("list flags fewer updates than a group title names and invalidates a low-ri
   }
 });
 
+test("a completed manifest review stays current across unchanged runs with an incomplete body", () => {
+  for (const body of [NUGET, "Dependency details were replaced."]) {
+    const comments = { 1: [] };
+    const repo = fakeRepo({
+      pulls: [pull(1, { title: "Bump Scalar.AspNetCore and 1 other", body })],
+      checkRuns: { [HEAD]: [{ name: "test", status: "completed", conclusion: "success" }] },
+      comments,
+    });
+    const list = () => runCommand(["list", "--repo", REPO], { rest: repo.rest }).prs[0];
+    const unreviewed = list();
+    assert.equal(unreviewed.parsed, false);
+    const verdict = "✅ Scalar.AspNetCore 3.1.1 and Azure.Storage.Blobs 12.30.2 checked in the manifest diff.";
+    const marker = "\n\nDependabot PR review by the Widgets routine";
+    comments[1].push({ user: PERSON, body: verdict + marker });
+    assert.equal(list().verdict.current, false, "the old verdict has no complete manifest review");
+    comments[1].push({ user: PERSON, body: `${verdict}\n\n${unreviewed.manifestReviewMarker}${marker}` });
+    for (let run = 0; run < 2; run += 1) {
+      const reviewed = list();
+      assert.equal(reviewed.parsed, false);
+      assert.equal(reviewed.kind, "unknown");
+      assert.equal(reviewed.verdict.current, true, "the same completed review should not be posted again");
+    }
+    comments[1].push({ user: PERSON, body: verdict + marker });
+    assert.equal(list().verdict.current, false, "an older manifest marker cannot validate a later verdict");
+  }
+});
+
+test("a manifest review is invalidated when the reviewed PR state changes", () => {
+  const original = pull(1, {
+    title: "Bump Scalar.AspNetCore and 1 other",
+    body: NUGET,
+    base: { sha: "c".repeat(40) },
+  });
+  const list = (pr, comments = []) => runCommand(["list", "--repo", REPO], {
+    rest: fakeRepo({ pulls: [pr], comments: { [pr.number]: comments } }).rest,
+  }).prs[0];
+  const initial = list(original);
+  const comments = [{
+    user: PERSON,
+    body: `✅ Scalar.AspNetCore 3.1.1 and Azure.Storage.Blobs 12.30.2 reviewed\n\n${initial.manifestReviewMarker}\n\nDependabot PR review by the Widgets routine`,
+  }];
+  assert.equal(list(original, comments).verdict.current, true);
+  for (const changed of [
+    { head: { ...original.head, sha: NEW_HEAD } },
+    { base: { sha: "d".repeat(40) } },
+    { title: "Bump Scalar.AspNetCore and 2 others" },
+    { body: `${NUGET}\nThe other dependency changed.` },
+    { number: 2 },
+  ]) {
+    const stale = list({ ...original, ...changed }, comments);
+    assert.notEqual(stale.manifestReviewMarker, initial.manifestReviewMarker);
+    assert.equal(stale.verdict.current, false);
+  }
+});
+
+test("a manifest marker does not override failed CI or omit known versions", () => {
+  const pr = pull(1, { title: "Bump Scalar.AspNetCore and 1 other", body: NUGET });
+  const initial = runCommand(["list", "--repo", REPO], { rest: fakeRepo({ pulls: [pr] }).rest }).prs[0];
+  for (const { text, conclusion } of [
+    { text: "Scalar.AspNetCore 3.1.1 reviewed", conclusion: "failure" },
+    { text: "Azure.Storage.Blobs 12.30.2 reviewed", conclusion: "success" },
+  ]) {
+    const repo = fakeRepo({
+      pulls: [pr],
+      checkRuns: { [HEAD]: [{ name: "test", status: "completed", conclusion }] },
+      comments: { 1: [{
+        user: PERSON,
+        body: `✅ ${text}\n\n${initial.manifestReviewMarker}\n\nDependabot PR review by the Widgets routine`,
+      }] },
+    });
+    assert.equal(runCommand(["list", "--repo", REPO], { rest: repo.rest }).prs[0].verdict.current, false);
+  }
+});
+
+test("a version mentioned only in the manifest marker is not review evidence", () => {
+  const manifestReviewMarker = `<!-- dependabot-manifest-review: ${"6".repeat(64)} -->`;
+  const updates = [{ name: "dotnet/sdk", from: "5", to: "6", kind: "major" }];
+  const body = `✅ Manifest diff reviewed\n\n${manifestReviewMarker}\n\nDependabot PR review by the Widgets routine`;
+  const options = { parsed: false, manifestReviewMarker };
+  assert.equal(readVerdict([{ body }], updates, options).verdict.versionsNamed, false);
+  assert.equal(readVerdict([{ body: body.replace("Manifest diff", "dotnet/sdk 6") }], updates, options).verdict.versionsNamed, true);
+});
+
 test("list keeps complete grouped updates parsed", () => {
   for (const title of [
     "chore: Bump @playwright/test and 1 other",
