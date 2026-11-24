@@ -85,7 +85,7 @@ own name (e.g. `pressgolf-release`) rather than bending the shared one.
 
 ```bash
 # Install, and later update: the same command
-npx skills add jwh3times/skills -s end-session -s ship -a codex --copy -y
+npx skills add jwh3times/skills -s end-session -s open-pr -a codex --copy -y
 node scripts/sync-agents.mjs                # regenerate .claude/skills/ and the AGENTS.md blocks
 ```
 
@@ -259,9 +259,10 @@ list becomes its `Doc map`. `Generated-config check` (workspace) gains the regen
 | Private-doc routing (end-session) | file → when to update; frozen files (AR `archive.md`, LB design history, VA session history); append-only folders (AR captured API responses); amend-only dated docs (MA) |
 | Docs validation | `npm run test:docs` (CA); `npm run docs:check` from `web/`, which runs `scripts/check-docs.mjs`, and the companion's `private/scripts/check-docs.mjs` (LB) |
 
-### `docs/agents/ship.md` — ship-only
+### `docs/agents/open-pr.md` — open-pr-only
 
-As built (2026-10-27): `settings/ship.md` holds `Fast checks` and `Issue link`. All 8 repositories
+`docs/agents/ship.md` until the skill's rename (Decision 15). As built (2026-10-27):
+`settings/open-pr.md` holds `Fast checks` and `Issue link`. All 8 repositories
 with a `ship` define the same `<type>/<issue#>-<slug>` and `Closes`/`Part of` rule in
 `docs/agents/dev-flow.md`, so `Issue link` covers branch naming too. The PR body is not a setting:
 `ship` fills the repository's PR template and always adds the `Release level:` line (CH). NC's
@@ -780,6 +781,24 @@ per-project install and the shared scripts are recorded under Architecture.
       items not done; the follow-up `## Procedure` sets it; `what-next` puts overdue `Needs you`
       items first and ranks an overdue one above agent work, below only an active handoff.
 
+15. **`ship` is renamed `open-pr`** (settled 2026-11-23). Claude Code gained a built-in `/ship`
+    (commit, push, open the PR, review it in the session, then watch it until it merges), and the
+    built-in takes the name: the shared skill stopped being listed, so `/ship` ran the built-in. The
+    skill becomes `open-pr`, the name of where it stops; nothing built in, and nothing in the
+    `mattpocock/skills` snapshot, uses it. Elsewhere in this document `ship` is the skill under
+    its old name.
+    - **The settings topic moves with it:** `docs/agents/ship.md` becomes `docs/agents/open-pr.md`
+      and `settings/ship.md` becomes `settings/open-pr.md`. The `ship-owned` value in `docs.md`
+      keeps its name: it is the release work any merge ships, set in every consumer's `docs.md`,
+      and renaming it would change every one for no change in behavior.
+    - **Consumers move in one sync.** `check-skills.mjs` and `sync-agents.mjs` read the shared
+      block from `.agents/skills/open-pr/`, so a consumer takes the skill and the scripts together.
+      `consumer-sync.mjs` first runs `npx skills remove ship -y` where the lock holds `ship` from
+      here (otherwise `check-skills` fails on a locked skill the install commands no longer name),
+      and moves `docs/agents/ship.md` to `docs/agents/open-pr.md` unless the new file exists. A
+      consumer's own prose that names `/ship` or `docs/agents/ship.md` outside the shared blocks is
+      fixed in its sync PR.
+
 ## Convergence
 
 Every install kept the repository's existing habits, so the settings files (330–630 lines each)
@@ -1196,6 +1215,14 @@ bodies' "follow it inline where the harness cannot fork" covers that. The same r
 combined instructions (global, thread and project) were 33,577 bytes, above
 `project_doc_max_bytes`. That limit counts project files only. magic-agenda's `AGENTS.md` is under
 it at 32,041 bytes, but only 727 bytes from the cap.
+
+`skills` 1.9.0, Windows, 2026-11-23 (Decision 15's removal), two local skills installed with `add
+-a codex --copy -y` into a scratch project, with a copy of one also under `.claude/skills/`:
+
+- **`remove <name> -a codex -y` does nothing.** It prints "Successfully removed 1 skill(s)" and
+  leaves the folder and the lock entry.
+- **`remove <name> -y` works:** it deletes the folder from `.agents/skills/` and `.claude/skills/`
+  and drops the lock entry, leaving the other skill alone.
 
 ## Found while surveying (fix in the source repos)
 
