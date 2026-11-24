@@ -69,7 +69,8 @@ test("install commands are parsed across continuations and CRLF", () => {
 
 test("the shared block here names this repository's skills and a pinned snapshot", () => {
   const state = upstreamState(repoRoot);
-  assert.ok(state.skills.ship, "ship has a tree id");
+  assert.ok(state.skills["open-pr"], "open-pr has a tree id");
+  assert.equal(state.skills.ship, undefined, "the retired ship is not listed");
   assert.ok(Object.values(state.skills).every(Boolean), "every listed skill exists under skills/");
   assert.ok(state.scripts["check-skills.mjs"]);
   assert.ok(state.snapshots.length > 0 && state.snapshots.every((s) => s.ref));

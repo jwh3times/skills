@@ -176,7 +176,7 @@ export function renderMarkdown({ head, results }, dateOf = () => null) {
       "",
       "By hand: in the consumer, re-run the install commands in its `AGENTS.md` shared-skills block, copy",
       "each canonical script it carries (with its test) from `scripts/` here, run",
-      "`node scripts/sync-agents.mjs`, and ship the branch.",
+      "`node scripts/sync-agents.mjs`, and run `open-pr` on the branch.",
     );
   }
   if (failed.length > 0) {

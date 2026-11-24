@@ -15,7 +15,7 @@ configured, or installed.
   a skill needs a fact about its repository, add a setting and teach the skill's first-run step to
   propose it.
 - Bodies run under both Claude Code and Codex: tool-neutral wording, and paths written as plain
-  repo-root-relative text (`docs/agents/ship.md`). Installed copies are mirrored into
+  repo-root-relative text (`docs/agents/open-pr.md`). Installed copies are mirrored into
   `.claude/skills/`, where relative Markdown links break.
 - Shell snippets in a `SKILL.md` use named variables (`"$branch"`, `${1:-default}`). Claude Code
   replaces a bare `$0`–`$9` in a loaded `SKILL.md` with the invocation's argument words
@@ -70,8 +70,8 @@ daily, and keeps the open `consumer-drift` issue listing who is behind on what. 
 marked `sync: true` in `consumers.json` (those on `Scheme: stamp-on-tag`), it also runs
 `scripts/consumer-sync.mjs` there and opens a `chore/take-skills` pull request through the release
 GitHub App. The others are refreshed by hand the same way: `node scripts/consumer-sync.mjs
-<consumer-checkout>`, then ship that branch. Run `node scripts/consumer-drift.mjs` to see the
-report locally.
+<consumer-checkout>`, then run `open-pr` on that branch. Run `node scripts/consumer-drift.mjs` to
+see the report locally.
 
 ## Publishing
 
