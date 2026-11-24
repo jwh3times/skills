@@ -8,9 +8,10 @@
   Pilot plan); a consumer-repository problem turns up.
 - `AGENTS.md` — durable rules for working in this repository. **When:** the layout, the build and
   check scripts, or a publishing rule changes; a consumer is added.
-- `docs/consumer-traps.md` — traps that hold across several consumers (deployers and the stamp
-  commit, `workflow_run`, rehearsals, merges from subagents, cloud routines). **When:** a trap turns
-  up in more than one consumer, or one turns out to belong to a single repository.
+- `docs/consumer-traps.md` — traps that hold across several consumers (setting up a consumer's
+  CodeQL, ruleset and Dependabot, deployers and the stamp commit, `workflow_run`, rehearsals,
+  merges from subagents, cloud routines). **When:** a trap turns up in more than one consumer, or
+  one turns out to belong to a single repository.
 - `docs/routines/dependabot-review.md` — the scheduled Dependabot review routine's prompt.
   **When:** the routine's prompt changes on claude.ai, or the `dependabot` skill changes what the
   routine must say.

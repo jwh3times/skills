@@ -4,6 +4,32 @@ Facts learned while rolling the shared skills and scripts out to the consumer re
 hold for more than one consumer, so none of them belongs in a single repository's
 `docs/agents/`. A trap that turns out to belong to one repository moves there.
 
+## Setting up a consumer
+
+Found bootstrapping hopover (2026-11-24); each is GitHub's behavior, so it holds for every new
+consumer.
+
+- **CodeQL default setup accepts only languages on the default branch.** Enabling a language
+  that is still only on the bootstrap branch, such as `actions` before the first workflow merges
+  or `javascript-typescript` before `scripts/*.mjs` does, fails with HTTP 422, "One or more
+  languages you selected are not present in the repository". Enable what `main` has, then add the
+  rest after the bootstrap merges. GitHub's language statistics can lag that merge by an hour or
+  more, and the 422 lasts until `gh api repos/<owner>/<repo>/languages` lists the language.
+- **A PR opened before CodeQL is set up is `BLOCKED` until its next push.** The `main` ruleset's
+  code scanning rule needs a CodeQL analysis of the PR's head, and default setup analyzes a pull
+  request only on a push. With every check green and no alerts, an empty commit on the branch
+  starts the analysis.
+- **The release App must be installed before the ruleset can name it.** Creating the `main`
+  ruleset with the App as its bypass actor fails with HTTP 422, "Actor release-stamper
+  integration must be part of the ruleset source or owner organization", until the App is
+  installed on the repository. Create the ruleset without the bypass actor, or wait for the
+  install, then add the actor with a `PUT` of the whole ruleset.
+- **Dependabot's `uv` updater supports only a range of Python versions,** 3.10 to 3.15 on
+  2026-11-24, and reads it from `.python-version`. A pin outside the range fails every `uv`
+  update job before it reads a dependency, with `tool_version_not_supported`, and no PR or issue
+  says so: read the `Dependabot Updates` runs (`gh run list`, event `dynamic`) after a consumer's
+  first scheduled update.
+
 ## Releases and deploys
 
 - **Deployers and the stamp commit.** `version.yml`'s `[skip ci]` stamp commit lands on `main`
