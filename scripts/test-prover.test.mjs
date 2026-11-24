@@ -351,9 +351,67 @@ test("a failing run that counted tests is red, whatever its messages say", () =>
   assert.equal(detect("note: zero tests ran\n", { zeroMatch: ["zero tests ran"] }).zeroMatch, null);
 });
 
+test("detect counts only the tests that ran: a skipped or filtered-out test proves nothing", () => {
+  // Vitest 5 and Jest count the tests a -t filter skipped in their total (seen in every consumer).
+  assert.equal(detect(" Test Files  1 passed (1)\n      Tests  1 passed | 9 skipped (10)\n").testCount, 1);
+  assert.equal(detect(" Test Files  1 skipped (1)\n      Tests  10 skipped (10)\n").testCount, 0);
+  assert.equal(detect("      Tests  2 failed | 1 passed | 1 todo (4)\n").testCount, 3);
+  assert.equal(detect("      Tests  no tests\n").testCount, 0);
+  assert.equal(detect("Tests:       3 skipped, 1 passed, 4 total\n").testCount, 1);
+  assert.equal(detect("Test Suites: 1 skipped, 0 of 1 total\nTests:       4 skipped, 4 total\n").testCount, 0);
+  assert.equal(detect("Tests:       1 failed, 1 todo, 2 passed, 4 total\n").testCount, 3);
+  // node's runner, spec and TAP reporters.
+  assert.equal(detect("ℹ tests 3\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 2\nℹ todo 0\n").testCount, 1);
+  assert.equal(detect("# tests 4\n# pass 1\n# fail 1\n# skip 1\n# todo 1\n").testCount, 2);
+  // pytest: a skipped test did not run, and a summary of only deselected tests is no tests.
+  assert.equal(detect("============ 4 passed, 1 skipped, 2 warnings in 1.20s (0:00:01) ============\n").testCount, 4);
+  assert.equal(detect("============================= 1 skipped in 0.90s ==============================\n").testCount, 0);
+  assert.equal(detect("collected 44 items / 44 deselected / 0 selected\n===== 44 deselected in 0.61s =====\n").testCount, 0);
+  // go test -v: a SKIP line is a test that did not run.
+  assert.equal(detect("=== RUN   TestA\n--- PASS: TestA (0.00s)\n=== RUN   TestB\n--- SKIP: TestB (0.00s)\n").testCount, 1);
+  // dotnet test: the summary line's Skipped is not a run.
+  assert.equal(detect("Passed!  - Failed:     0, Passed:     2, Skipped:     1, Total:     3, Duration: 1 s").testCount, 2);
+  assert.equal(detect("Total tests: 5\n     Passed: 4\n    Skipped: 1\n").testCount, 4);
+});
+
+test("detect counts Microsoft Testing Platform's and unittest's runs", () => {
+  const mtp = "Test run summary: Passed! - bin/Debug/net10.0/App.Tests.dll (net10.0|x64)\n  total: 25\n  failed: 1\n  succeeded: 23\n  skipped: 1\n  duration: 1s 234ms\n";
+  assert.equal(detect(mtp).testCount, 24);
+  const none = "Test run summary: Zero tests ran - bin/Debug/net10.0/App.Tests.dll\n  total: 0\n  failed: 0\n  succeeded: 0\n  skipped: 0\n";
+  assert.equal(classify({ exitCode: 8, timedOut: false, ...detect(none) }), "zero-match");
+  assert.equal(detect("....\n------------------------------------------------\nRan 13 tests in 0.004s\n\nOK\n").testCount, 13);
+  assert.equal(detect("Ran 3 tests in 0.002s\n\nFAILED (failures=1, skipped=2)\n").testCount, 1);
+  assert.equal(detect("Ran 1 test in 0.000s\n\nOK (skipped=1)\n").testCount, 0);
+});
+
+test("detect counts cargo test and deno test runs", () => {
+  // cargo prints one block per test target; the doc-tests' `running 0 tests` often comes last.
+  const cargo = [
+    "     Running unittests src/lib.rs (target/release/deps/causet_store-1a2b)",
+    "running 1 test",
+    "test delta::tests::ids ... ok",
+    "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.01s",
+    "   Doc-tests causet_store",
+    "running 0 tests",
+    "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+  ].join("\n");
+  assert.equal(detect(cargo).testCount, 1);
+  assert.equal(detect("running 0 tests\n\ntest result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 5 filtered out\n").testCount, 0);
+  assert.equal(detect("test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out\n").testCount, 3);
+  assert.equal(classify({ exitCode: 0, timedOut: false, ...detect("running 0 tests\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out\n") }), "zero-match");
+  assert.equal(detect("running 1 test from ./plan.test.ts\nok | 1 passed | 0 failed | 6 filtered out (12ms)\n").testCount, 1);
+  assert.equal(detect("ok | 0 passed | 0 failed | 7 filtered out (4ms)\n").testCount, 0);
+  assert.equal(detect("FAILED | 1 passed (3 steps) | 2 failed | 1 ignored (40ms)\n").testCount, 3);
+});
+
+test("node's runner given a test file that does not exist selected no tests", () => {
+  const seen = detect("Could not find 'C:\\dev\\repo\\scripts\\no-such.test.mjs'\n");
+  assert.equal(seen.zeroMatch, "could not find '");
+  assert.equal(classify({ exitCode: 1, timedOut: false, ...seen }), "zero-match");
+});
+
 test("detect counts pytest's and go test -v's tests", () => {
   assert.equal(detect("collected 5 items / 2 deselected / 3 selected\n==== 1 failed, 2 passed, 2 deselected in 0.05s ====\n").testCount, 3);
-  assert.equal(detect("============ 4 passed, 1 skipped, 2 warnings in 1.20s (0:00:01) ============\n").testCount, 5);
   const go = [
     "=== RUN   TestA",
     "--- PASS: TestA (0.00s)",
