@@ -1188,6 +1188,15 @@ and source read.
   time.
 - `filesystem list -j <folder>` prints an array of nodes; the name is `name.value`.
 
+Codex CLI 0.171.0, Windows, 2026-11-24 (Decision 14's fork frontmatter): `codex exec --sandbox
+read-only` in magic-agenda listed `test-prover`, `ci-triage` and `records-audit` among its
+skills and reported no skill-file load or frontmatter warning. So Codex accepts `context: fork`,
+`model: inherit` and `background` in a skill's frontmatter. Codex does not fork on them; the
+bodies' "follow it inline where the harness cannot fork" covers that. The same run warned that the
+combined instructions (global, thread and project) were 33,577 bytes, above
+`project_doc_max_bytes`. That limit counts project files only. magic-agenda's `AGENTS.md` is under
+it at 32,041 bytes, but only 727 bytes from the cap.
+
 ## Found while surveying (fix in the source repos)
 
 - ~~LB's `scripts/check-docs.mjs` parses `.claude/agents/docs-updater.md` for the canonical
