@@ -15,7 +15,9 @@ installed here, joining the shared install command, which each consumer takes at
 `scripts/guard.mjs` written 2026-11-23 (Decision 13, the `guard.md` catalog), a canonical script
 every consumer carries, which `sync-agents.mjs` registers as a hook. `test-prover`, `ci-triage` and
 `records-audit` written 2026-11-23 (Decision 14, the `test-proof.md` catalog), with the board's
-`Due` field, and joined the shared install command the same way.
+`Due` field, and joined the shared install command the same way. speed-of-light (speed-of-light#3)
+and hopover (hopover#1) joined 2026-11-24, bootstrapped on TirelessInvest's layout and already on
+`stamp-on-tag`, so both take sync pull requests from the start.
 
 ## Goal
 
