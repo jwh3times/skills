@@ -39,6 +39,12 @@ const TOGETHER = [
   "Updates `expo-router` from 57.0.29 to 58.0.28",
 ].join("\n");
 const IMAGE_GROUP = "Bumps the docker-minor-and-patch group with 1 update in the /backend/api-service directory: golang.\n\nUpdates `golang` from 1.27.3-alpine to 1.27.4-alpine";
+const PINNED_NUGET = [
+  "Pinned [Azure.Storage.Blobs](https://github.com/Azure/azure-sdk-for-net) at 12.30.2.",
+  "Updated [Npgsql.EntityFrameworkCore.PostgreSQL](https://github.com/npgsql/efcore.pg) from 10.0.3 to 10.0.4.",
+  "Updated [Npgsql.OpenTelemetry](https://github.com/npgsql/npgsql) from 10.0.3 to 10.0.4.",
+  "Updated [Scalar.AspNetCore](https://github.com/scalar/scalar) from 3.1.1 to 3.2.0.",
+].join("\n");
 
 test("parseArgs reads list and refuses what does not fit it", () => {
   assert.deepEqual(parseArgs(["list", "--repo", REPO]), { command: "list", repo: REPO, pr: null, label: "widgets", wait: 0 });
@@ -72,6 +78,29 @@ test("a body a person replaced falls back to the title, or reports nothing parse
   assert.deepEqual(parseUpdates("chore: bump vite from 8.3.7 to 8.3.8 in /web", edited), [{ name: "vite", from: "8.3.7", to: "8.3.8", kind: "patch" }]);
   assert.deepEqual(parseUpdates("chore: bump the npm-minor-and-patch group in /frontend with 6 updates", edited), []);
   assert.equal(furthestKind([]), "unknown");
+});
+
+test("pinned NuGet updates retain their target version with an unknown change kind", () => {
+  assert.deepEqual(parseUpdates("chore: Bump Azure.Storage.Blobs and 3 others", PINNED_NUGET), [
+    { name: "Azure.Storage.Blobs", from: null, to: "12.30.2", kind: "unknown" },
+    { name: "Npgsql.EntityFrameworkCore.PostgreSQL", from: "10.0.3", to: "10.0.4", kind: "patch" },
+    { name: "Npgsql.OpenTelemetry", from: "10.0.3", to: "10.0.4", kind: "patch" },
+    { name: "Scalar.AspNetCore", from: "3.1.1", to: "3.2.0", kind: "minor" },
+  ]);
+  assert.deepEqual(parseUpdates("Bump Azure.Storage.Blobs", "Pinned Azure.Storage.Blobs at `13.0.0`."), [
+    { name: "Azure.Storage.Blobs", from: null, to: "13.0.0", kind: "unknown" },
+  ]);
+});
+
+test("a verdict must name a pinned update's current target version", () => {
+  const title = "chore: Bump Azure.Storage.Blobs and 3 others";
+  const comments = [{
+    user: PERSON,
+    body: "✅ Azure.Storage.Blobs 12.30.2, Npgsql packages 10.0.4 and Scalar.AspNetCore 3.2.0 reviewed\n\nDependabot PR review by the Widgets routine",
+  }];
+  assert.equal(readVerdict(comments, parseUpdates(title, PINNED_NUGET)).verdict.versionsNamed, true);
+  const retargeted = parseUpdates(title, PINNED_NUGET.replace("12.30.2", "13.0.0"));
+  assert.equal(readVerdict(comments, retargeted).verdict.versionsNamed, false);
 });
 
 test("versions are classified by the first segment that moves", () => {
@@ -219,6 +248,48 @@ test("list gives only Dependabot's open PRs, oldest first, each read on its curr
   assert.equal(second.maintainedByDependabot, false);
   assert.deepEqual(second.othersCommitted, [NEW_HEAD]);
   assert.ok(repo.calls.includes(`repos/${REPO}/commits/${NEW_HEAD}/check-runs?per_page=100`));
+});
+
+test("list treats a pinned major as a candidate even when the other updates are routine", () => {
+  const repo = fakeRepo({ pulls: [pull(1, {
+    title: "chore: Bump Azure.Storage.Blobs and 3 others",
+    body: PINNED_NUGET.replace("12.30.2", "13.0.0"),
+  })] });
+  const [pr] = runCommand(["list", "--repo", REPO], { rest: repo.rest }).prs;
+  assert.equal(pr.updates.length, 4);
+  assert.equal(pr.parsed, true);
+  assert.equal(pr.kind, "unknown");
+});
+
+test("list flags fewer updates than a group title names and invalidates a low-risk verdict", () => {
+  for (const title of [
+    "chore: Bump Scalar.AspNetCore and 3 others",
+    "Bump Scalar.AspNetCore and 1 other",
+    "Bump the nuget-minor-patch group with 4 updates",
+  ]) {
+    const repo = fakeRepo({
+      pulls: [pull(1, { title, body: NUGET })],
+      comments: { 1: [{ user: PERSON, body: "✅ Scalar.AspNetCore 3.1.1 reviewed\n\nDependabot PR review by the Widgets routine" }] },
+    });
+    const [pr] = runCommand(["list", "--repo", REPO], { rest: repo.rest }).prs;
+    assert.equal(pr.updates.length, 1, title);
+    assert.equal(pr.parsed, false, title);
+    assert.equal(pr.kind, "unknown", title);
+    assert.equal(pr.verdict.current, false, title);
+  }
+});
+
+test("list keeps complete grouped updates parsed", () => {
+  for (const title of [
+    "chore: Bump @playwright/test and 1 other",
+    "Bump the npm-minor-patch group with 2 updates",
+    "Bump the npm-minor-patch group",
+  ]) {
+    const repo = fakeRepo({ pulls: [pull(1, { title, body: GROUPED })] });
+    const [pr] = runCommand(["list", "--repo", REPO], { rest: repo.rest }).prs;
+    assert.equal(pr.parsed, true, title);
+    assert.equal(pr.kind, "minor", title);
+  }
 });
 
 test("a mergeable state GitHub has not computed yet is read again, a few times", () => {

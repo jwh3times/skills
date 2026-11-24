@@ -65,8 +65,8 @@ out, and report, a PR that is a `draft`, carries a label containing `hold`, `do-
 - **ROUTINE:** `kind` is `minor`, `patch`, `digest` or `removed`, and no update matches the `Review
   triggers`. It needs no release-note research, but step 3 still applies.
 - **CANDIDATE:** `kind` is `major`, `unknown`, `downgrade` or `suffix`, or an update matches the
-  `Review triggers`. A grouped PR is one candidate covering every member. With `parsed: false` (a
-  person replaced the body), read the versions from the manifests' diff
+  `Review triggers`. A grouped PR is one candidate covering every member. With `parsed: false`
+  (no updates could be read, or fewer than the title names), read the versions from the manifests' diff
   (`gh api "repos/<owner>/<repo>/pulls/<n>/files"`), and treat it as a candidate.
 
 A candidate is something to investigate in step 5, not yet a verdict.

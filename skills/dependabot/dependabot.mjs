@@ -9,8 +9,9 @@
 // `list` gives every open Dependabot pull request, oldest first, or only `--pr <n>`. For each:
 //   - `updates`: each dependency with `from`, `to` and `kind` (major, minor, patch, digest, suffix,
 //     downgrade, removed or unknown), read from the body Dependabot wrote, or from the title when a
-//     person has replaced the body; `parsed` is false when neither names one, and `kind` is the
-//     furthest-reaching update's.
+//     person has replaced the body. Pinned updates have `from: null` and `kind: "unknown"`.
+//     `parsed` is false when no updates were found or the title names more than were parsed;
+//     `kind` is then unknown, otherwise the furthest-reaching update's.
 //   - `ecosystem`, `directory` and `group`, from the branch name and the body.
 //   - `checks`: every check run and commit status on the current head, by its full sha, as
 //     `failed`, `cancelled`, `pending` and `passed`, with each failed check's run and job ids for
@@ -131,6 +132,7 @@ const UPDATE_LINES = [
   new RegExp(`^Bumps (?:\\[([^\\]]+)\\]\\([^)]*\\)|(?!the )([^\\s\\[]+)) from ${VERSION} to ${VERSION}\\.?$`),
 ];
 const TITLE_UPDATE = new RegExp(`\\bbump (\\S+) from ${VERSION} to ${VERSION}(?:\\s|$)`, "i");
+const PINNED_UPDATE = new RegExp(`^Pinned (?:\\[([^\\]]+)\\]\\([^)]*\\)|([^\\s\\[]+)) at ${VERSION}\\.?$`);
 
 export function parseUpdates(title, body) {
   const updates = [];
@@ -139,13 +141,18 @@ export function parseUpdates(title, body) {
     const key = `${name} ${from} ${to}`;
     if (seen.has(key)) return;
     seen.add(key);
-    updates.push({ name, from, to, kind: from === null ? "removed" : classify(from, to) });
+    updates.push({ name, from, to, kind: to === null ? "removed" : from === null ? "unknown" : classify(from, to) });
   };
   for (const raw of (body || "").split(/\r?\n/)) {
     const line = raw.trim();
     const removed = line.match(/^Removes `([^`]+)`\.?$/);
     if (removed) {
       add(removed[1], null, null);
+      continue;
+    }
+    const pinned = line.match(PINNED_UPDATE);
+    if (pinned) {
+      add(pinned[1] ?? pinned[2], null, pinned[3]);
       continue;
     }
     for (const pattern of UPDATE_LINES) {
@@ -162,6 +169,13 @@ export function parseUpdates(title, body) {
     if (match) add(match[1], match[2], match[3]);
   }
   return updates;
+}
+
+function expectedUpdateCount(title) {
+  const count = (title || "").match(/\bwith (\d+) updates?\b/i);
+  if (count) return Number(count[1]);
+  const others = (title || "").match(/\band (\d+) others?\b/i);
+  return others ? Number(others[1]) + 1 : null;
 }
 
 function numericPrefix(version) {
@@ -290,6 +304,8 @@ function readOne(rest, sleep, options, pr) {
   }
   const head = full.head.sha;
   const updates = parseUpdates(full.title, full.body);
+  const expected = expectedUpdateCount(full.title);
+  const parsed = updates.length > 0 && (expected === null || updates.length >= expected);
   const checkRuns = rest(`repos/${options.repo}/commits/${head}/check-runs?per_page=100`).check_runs ?? [];
   const status = rest(`repos/${options.repo}/commits/${head}/status`);
   const commits = rest(`repos/${options.repo}/pulls/${full.number}/commits?per_page=100`);
@@ -297,7 +313,10 @@ function readOne(rest, sleep, options, pr) {
   const othersCommitted = commits.filter((commit) => commit.author?.login !== BOT).map((commit) => commit.sha);
   const checks = summarizeChecks(checkRuns, status);
   const { verdict, comments: others } = readVerdict(comments, updates);
-  if (verdict) verdict.current = verdictCurrent(verdict, checks);
+  if (verdict) {
+    verdict.versionsNamed &&= parsed;
+    verdict.current = verdictCurrent(verdict, checks);
+  }
   return {
     number: full.number,
     title: full.title,
@@ -311,8 +330,8 @@ function readOne(rest, sleep, options, pr) {
     headRef: full.head.ref,
     ...describeBranch(full.head.ref, full.title, full.body),
     updates,
-    parsed: updates.length > 0,
-    kind: furthestKind(updates),
+    parsed,
+    kind: parsed ? furthestKind(updates) : "unknown",
     mergeable: full.mergeable ?? null,
     mergeableState: full.mergeable_state ?? "unknown",
     checks,
