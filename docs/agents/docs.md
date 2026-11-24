@@ -8,6 +8,12 @@
   Pilot plan); a consumer-repository problem turns up.
 - `AGENTS.md` — durable rules for working in this repository. **When:** the layout, the build and
   check scripts, or a publishing rule changes.
+- `docs/consumer-traps.md` — traps that hold across several consumers (deployers and the stamp
+  commit, `workflow_run`, rehearsals, merges from subagents, cloud routines). **When:** a trap turns
+  up in more than one consumer, or one turns out to belong to a single repository.
+- `docs/routines/dependabot-review.md` — the scheduled Dependabot review routine's prompt.
+  **When:** the routine's prompt changes on claude.ai, or the `dependabot` skill changes what the
+  routine must say.
 - `skills/*/SKILL.md` — each skill's contract with the skills that call it (what one passes in, what
   the other returns or owes). **When:** a skill changes what it takes from or hands to another
   skill.

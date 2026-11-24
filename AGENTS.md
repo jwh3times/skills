@@ -49,8 +49,9 @@ configured, or installed.
   `scripts/` so the test does not install.
 - `test-prover` and `ci-triage` run in a forked subagent (`context: fork` in their frontmatter),
   and every forked skill and agent file takes `model: inherit`, never a pinned model (Decision 14
-  in `docs/design.md`). Their bodies still say what to do where the harness cannot fork (Codex):
-  follow them inline.
+  in `docs/design.md`). A session that launches a subagent passes no model override either: the
+  subagent runs on the model that launched it. Their bodies still say what to do where the harness
+  cannot fork (Codex): follow them inline.
 - A skill derived from someone else's keeps their license notice inside its own folder (as
   `skills/handoff/LICENSE`), since the folder installs without the rest of this repository.
 - `npm run check` (CI runs it) must pass before a commit. CI also runs
