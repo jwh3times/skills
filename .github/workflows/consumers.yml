@@ -17,7 +17,8 @@ name: Consumers
 # The sync job pushes with a token from the release GitHub App (installed on each synced consumer,
 # with Contents and Pull requests write), so the pull request starts the consumer's CI, which a
 # `GITHUB_TOKEN` push would not. The App's client ID is the RELEASE_APP_CLIENT_ID variable here and
-# its private key the RELEASE_APP_PRIVATE_KEY secret; until the variable is set, the job is skipped.
+# its private key the RELEASE_APP_PRIVATE_KEY secret of the `consumer-sync` environment, which only
+# `main` may deploy to; until the variable is set, the job is skipped.
 
 on:
   push:
@@ -38,6 +39,7 @@ jobs:
   drift:
     name: Report consumer drift
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       issues: write
@@ -47,6 +49,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # the report dates each stale copy from this repository's history
+          persist-credentials: false
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -89,6 +92,10 @@ jobs:
     needs: drift
     if: needs.drift.outputs.targets != '[]' && vars.RELEASE_APP_CLIENT_ID != ''
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # The App's private key is a secret of this environment, which only `main` may deploy to, so a
+    # workflow edited on a branch never reads a key that can write to every synced consumer.
+    environment: consumer-sync
     strategy:
       fail-fast: false
       matrix:
@@ -97,6 +104,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: skills
+          persist-credentials: false
 
       - name: Create release App token
         id: app-token

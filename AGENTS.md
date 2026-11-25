@@ -5,8 +5,8 @@ repositories under `~/dev/`: apexracers, caitlyn-holland-vip, causet, guardiantr
 hopover, leasebook, magic-agenda, Nearcited, PressGolf, speed-of-light, TirelessInvest,
 valleys-at-ashebrook-hoa. A new consumer joins this list, `consumers.json` and the Status line of
 `docs/design.md`. One with Dependabot (`.github/dependabot.yml`) also joins the Repositories list
-in `docs/routines/dependabot-review.md` and, on claude.ai, the live routine's prompt and sources.
-`docs/design.md` is the architecture; read it before changing how a skill is structured,
+in `docs/routines/dependabot-review.md` and, on claude.ai, the live routine's prompt and sources;
+this repository is on that list too, for its GitHub Actions. `docs/design.md` is the architecture; read it before changing how a skill is structured,
 configured, or installed.
 
 ## Skill bodies
@@ -59,6 +59,11 @@ configured, or installed.
 - `npm run check` (CI runs it) must pass before a commit. CI also runs
   `git diff --check "$(git mktree </dev/null)" HEAD`, the whitespace rule the strictest consumer
   enforces on every file it copies from here, so no trailing space or blank line at a file's end.
+- The `main` ruleset requires every `.github/workflows/check.yml` job by its check name (Linux on
+  Node 22 and 26, Windows on Node 26, and Whitespace), with the branch up to date, and CodeQL code
+  scanning. Renaming a job or changing the matrix there needs the ruleset's required checks
+  changed with it, or every pull request waits on a check that never reports. Every action is pinned to a full commit SHA, which the repository's
+  Actions settings require, and Dependabot moves the pins.
 
 ## Consumer repositories
 

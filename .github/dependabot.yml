@@ -1,0 +1,29 @@
+# Dependabot keeps this repository's GitHub Actions current. It has no other dependencies:
+# package.json declares none, and the scripts use only Node's standard library.
+#
+# Every `uses:` in .github/workflows/ is pinned to a full commit SHA with its release as a trailing
+# `# vX.Y.Z` comment, and the repository requires SHA pins. Dependabot reads that comment to class
+# a bump and rewrites both, so pinning costs no freshness. The scheduled Dependabot review
+# (docs/routines/dependabot-review.md) reviews each pull request; nothing merges on its own.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "05:00"
+      timezone: "America/New_York"
+    # A release must be a week old before Dependabot proposes it, so a compromised tag is likelier
+    # to be caught upstream before it reaches a workflow holding the release App's key.
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: "chore"
+    groups:
+      actions-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
