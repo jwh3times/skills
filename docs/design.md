@@ -643,6 +643,17 @@ per-project install and the shared scripts are recorded under Architecture.
       `main`, a rerun), so a stale "safe to merge" is neither skipped in triage nor offered for
       landing: the PR is reviewed again and the new verdict replaces it. A needs-effort verdict
       stays current.
+    - **A PR counts as parsed only when every update was read** (2026-11-24, #108, #109).
+      `parsed` used to be true with updates missing: GitHub cuts a body off at 65,536
+      characters, which dropped a large group's later `Updates` lines, and NuGet's `Pinned <name>
+      at <version>` line matched no pattern, so a cut-off or pinned major triaged ROUTINE.
+      `dependabot.mjs` reads the pinned line (`from: null`, kind `unknown`) and compares the
+      dependencies it read, counted by distinct name, with what the title says (`with N updates`,
+      `and N others`, `a and b`, `a, b and c`, or a grouped body's first line). A shortfall is
+      `parsed: false`, with `expected` and `missing`, and `kind` is never nearer than `unknown`,
+      so the PR is a candidate reviewed from its manifest diff. Its low-risk verdict carries the
+      PR's `manifestReviewMarker`, a hash of the title and each file's changed lines: a rebase
+      that changes neither keeps it current, and a retarget makes it stale.
     - **A fix on a Dependabot branch** waits for the user, and the branch is caught up by
       updating it from then on, never `@dependabot rebase`, which drops the fix (GT).
     - **The stamped changelog line is made inert, in `stamp-changelog.mjs`** (2026-11-22). The
