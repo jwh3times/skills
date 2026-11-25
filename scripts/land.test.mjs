@@ -222,10 +222,18 @@ test("the verdict reads state, head, conflicts, checks and then GitHub's merge s
 
 test("the link line names what the PR means to close, and other references are mentions", () => {
   const repo = { owner: "acme", name: "widgets" };
-  assert.deepEqual(parseLinkLine("\n  Closes #3 and fixes acme/tools#9\nresolves #12", repo).closes, [
+  assert.deepEqual(parseLinkLine("\n  Closes #3 and fixes acme/tools#9\nThis also resolves #12", repo).closes, [
     { repo: REPO, number: 3 },
     { repo: "acme/tools", number: 9 },
   ]);
+  // One finished issue per line at the top is the link line too; a blank line or other text ends it.
+  const stacked = parseLinkLine("Closes #108\r\n  closes #109.\nFixes #5 and part of #6\n\nSupersedes #110. Closes #7\nCloses #8", repo);
+  assert.deepEqual(stacked.closes.map((ref) => ref.number), [108, 109, 5]);
+  assert.deepEqual(stacked.partOf.map((ref) => ref.number), [6]);
+  assert.equal(stacked.text, "Closes #108\ncloses #109.\nFixes #5 and part of #6");
+  assert.deepEqual(parseLinkLine("Closes #1\nand then closes #2", repo).closes.map((ref) => ref.number), [1]);
+  assert.deepEqual(parseLinkLine("Closes #1\nFixes #2 once the migration lands", repo).closes.map((ref) => ref.number), [1]);
+  assert.deepEqual(parseLinkLine("Closes #1\nCloses: #2", repo).closes.map((ref) => ref.number), [1, 2]);
   assert.deepEqual(parseLinkLine("Part of #469.", repo).partOf, [{ repo: REPO, number: 469 }]);
   assert.deepEqual(parseLinkLine("", repo), { text: "", closes: [], partOf: [] });
   assert.deepEqual(mentionedNumbers("Closes #3. Follows #4, not &#39; or a/b#5; #4 again; #6", new Set([3])), [4, 6]);
@@ -254,6 +262,11 @@ test("a closing reference the link line does not name, or names as Part of, is u
     prs: [pullRequest({ body: "Closes #3\n\nThis does not close #22.", closing: [{ number: 3, state: "OPEN", repo: REPO }, { number: 22, state: "OPEN", repo: REPO }] })],
   });
   assert.deepEqual(runWith(negated, ["pr", "--repo", REPO, "--pr", "7"]).result.unexpectedClosing.map((ref) => ref.number), [22]);
+  // jwh3times/skills#112: one `Closes` line per finished issue is not a stray keyword.
+  const stacked = fakeRepo({
+    prs: [pullRequest({ body: "Closes #108\nCloses #109\n\nSupersedes #110.", closing: [{ number: 108, state: "OPEN", repo: REPO }, { number: 109, state: "OPEN", repo: REPO }] })],
+  });
+  assert.deepEqual(runWith(stacked, ["pr", "--repo", REPO, "--pr", "7"]).result.unexpectedClosing, []);
 });
 
 test("a bot's PR skips the mention lookup, and a Dependabot author is flagged", () => {
