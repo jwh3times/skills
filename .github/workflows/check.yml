@@ -8,15 +8,44 @@ on:
 permissions:
   contents: read
 
+# A new push to a pull request replaces its run still in progress; runs on main always finish.
+concurrency:
+  group: check-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Each job's check name below is a required status check in the `main` ruleset, matched by name:
+# renaming a job or changing the matrix needs the ruleset's required_status_checks changed with it.
+# Never add a `paths` filter: a required check that never reports blocks the pull request.
 jobs:
-  check:
+  whitespace:
+    name: Whitespace
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      # The whitespace rule the strictest consumer enforces on every file it copies from here.
-      - name: Whitespace
-        run: git diff --check "$(git mktree </dev/null)" HEAD
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          node-version: 22
+          persist-credentials: false
+      # The whitespace rule the strictest consumer enforces on every file it copies from here.
+      - run: git diff --check "$(git mktree </dev/null)" HEAD
+
+  check:
+    # The canonical scripts run under each consumer's own Node (its .nvmrc names 22 or 26), and on
+    # Windows, where guard.mjs runs as a Claude Code hook and the consumers are refreshed from.
+    name: Check (${{ matrix.os-name }}, Node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, os-name: Linux, node: 22 }
+          - { os: ubuntu-latest, os-name: Linux, node: 26 }
+          - { os: windows-latest, os-name: Windows, node: 26 }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
       - run: npm run check

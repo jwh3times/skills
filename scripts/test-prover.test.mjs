@@ -447,7 +447,22 @@ test("an interrupt kills the running command and puts the files back", async (t)
     "edit", "--root", root, "--file", "guard.mjs", "--search", "n < 10", "--replace", "n < 11",
     "--command", "node hang-pid.mjs", "--timeout", "60",
   ]);
-  while (!existsSync(path.join(root, "pid.txt"))) await new Promise((resolve) => setTimeout(resolve, 100));
+  // Wait for the command to start, but not past `edit` ending: one that fails before running the
+  // command would otherwise leave this loop waiting until the job's timeout.
+  let settled = false;
+  running.then(
+    () => (settled = true),
+    () => (settled = true),
+  );
+  const deadline = Date.now() + 20000;
+  while (!existsSync(path.join(root, "pid.txt"))) {
+    if (settled) {
+      await running;
+      assert.fail("edit ended before its command wrote pid.txt");
+    }
+    assert.ok(Date.now() < deadline, "the command started within 20s");
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
   const pid = Number(readFileSync(path.join(root, "pid.txt"), "utf8"));
   assert.notEqual(bytes(root, "guard.mjs").toString(), before.toString(), "the edit is in place while the command runs");
   interrupt();
