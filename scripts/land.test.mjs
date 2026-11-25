@@ -233,6 +233,7 @@ test("the link line names what the PR means to close, and other references are m
   assert.equal(stacked.text, "Closes #108\ncloses #109.\nFixes #5 and part of #6");
   assert.deepEqual(parseLinkLine("Closes #1\nand then closes #2", repo).closes.map((ref) => ref.number), [1]);
   assert.deepEqual(parseLinkLine("Closes #1\nFixes #2 once the migration lands", repo).closes.map((ref) => ref.number), [1]);
+  assert.deepEqual(parseLinkLine("Closes #1\nCloses: #2", repo).closes.map((ref) => ref.number), [1, 2]);
   assert.deepEqual(parseLinkLine("Part of #469.", repo).partOf, [{ repo: REPO, number: 469 }]);
   assert.deepEqual(parseLinkLine("", repo), { text: "", closes: [], partOf: [] });
   assert.deepEqual(mentionedNumbers("Closes #3. Follows #4, not &#39; or a/b#5; #4 again; #6", new Set([3])), [4, 6]);
