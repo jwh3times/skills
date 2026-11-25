@@ -119,7 +119,9 @@ test("the title says how many dependencies a PR updates, and names them when it 
 });
 
 test("a PR is parsed only when every dependency its title counts or names was read", () => {
-  assert.equal(readUpdates("Bump the npm-minor-patch group across 1 directory with 2 updates", GROUPED).parsed, true);
+  const complete = readUpdates("Bump the npm-minor-patch group across 1 directory with 2 updates", GROUPED);
+  assert.equal(complete.parsed, true);
+  assert.equal(complete.kind, "minor", "a fully parsed PR keeps its own kind, so routine PRs stay routine");
   assert.equal(readUpdates("Bump decode-uri-component and expo-router", TOGETHER).parsed, true);
   assert.equal(readUpdates("Bump jsdom from 30.1.3 to 31.0.0", SINGLE).parsed, true);
   assert.equal(readUpdates(PINNED_TITLE, PINNED_NUGET).parsed, true);
@@ -196,6 +198,16 @@ test("a version found only in the manifest marker's hex is not named", () => {
   const named = readVerdict([{ body: body("dotnet/sdk 6 reviewed") }], updates, { manifestReviewMarker: marker }).verdict;
   assert.equal(named.versionsNamed, true);
   assert.equal(named.manifestReviewed, true);
+});
+
+test("a replaced body with no update read can still be reviewed from its manifest diff", () => {
+  const marker = `<!-- dependabot-manifest-review: ${"a".repeat(64)} -->`;
+  const body = `✅ **VERIFIED LOW-RISK** vite 8.3.8 and react 19.2.1, from the manifest diff\n\n${marker}\n\u{1F916} Dependabot PR review by the Widgets routine`;
+  const { verdict } = readVerdict([{ body }], [], { manifestReviewMarker: marker });
+  assert.equal(verdict.versionsNamed, true);
+  assert.equal(verdict.manifestReviewed, true);
+  assert.equal(verdictCurrent(verdict, { state: "passed" }), true);
+  assert.equal(readVerdict([{ body }], []).verdict.versionsNamed, false, "with no marker asked for, nothing read names nothing");
 });
 
 test("versions are classified by the first segment that moves", () => {
