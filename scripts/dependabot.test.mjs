@@ -5,9 +5,12 @@ import {
   DependabotError,
   classify,
   describeBranch,
+  expectedUpdates,
   furthestKind,
+  manifestReviewMarker,
   parseArgs,
   parseUpdates,
+  readUpdates,
   readVerdict,
   verdictCurrent,
   runCommand,
@@ -39,6 +42,14 @@ const TOGETHER = [
   "Updates `expo-router` from 57.0.29 to 58.0.28",
 ].join("\n");
 const IMAGE_GROUP = "Bumps the docker-minor-and-patch group with 1 update in the /backend/api-service directory: golang.\n\nUpdates `golang` from 1.27.3-alpine to 1.27.4-alpine";
+// jwh3times/apexracers#562: NuGet with transitive pinning writes the pinned package without a `from`.
+const PINNED_TITLE = "chore: Bump Azure.Storage.Blobs and 3 others";
+const PINNED_NUGET = [
+  "Pinned [Azure.Storage.Blobs](https://github.com/Azure/azure-sdk-for-net) at 12.30.2.",
+  "Updated [Npgsql.EntityFrameworkCore.PostgreSQL](https://github.com/npgsql/efcore.pg) from 10.0.3 to 10.0.4.",
+  "Updated [Npgsql.OpenTelemetry](https://github.com/npgsql/npgsql) from 10.0.3 to 10.0.4.",
+  "Updated [Scalar.AspNetCore](https://github.com/scalar/scalar) from 3.1.1 to 3.2.0.",
+].join("\n");
 
 test("parseArgs reads list and refuses what does not fit it", () => {
   assert.deepEqual(parseArgs(["list", "--repo", REPO]), { command: "list", repo: REPO, pr: null, label: "widgets", wait: 0 });
@@ -72,6 +83,119 @@ test("a body a person replaced falls back to the title, or reports nothing parse
   assert.deepEqual(parseUpdates("chore: bump vite from 8.3.7 to 8.3.8 in /web", edited), [{ name: "vite", from: "8.3.7", to: "8.3.8", kind: "patch" }]);
   assert.deepEqual(parseUpdates("chore: bump the npm-minor-and-patch group in /frontend with 6 updates", edited), []);
   assert.equal(furthestKind([]), "unknown");
+});
+
+test("a pinned update keeps its new version, with no old one and an unknown kind", () => {
+  assert.deepEqual(parseUpdates(PINNED_TITLE, PINNED_NUGET), [
+    { name: "Azure.Storage.Blobs", from: null, to: "12.30.2", kind: "unknown" },
+    { name: "Npgsql.EntityFrameworkCore.PostgreSQL", from: "10.0.3", to: "10.0.4", kind: "patch" },
+    { name: "Npgsql.OpenTelemetry", from: "10.0.3", to: "10.0.4", kind: "patch" },
+    { name: "Scalar.AspNetCore", from: "3.1.1", to: "3.2.0", kind: "minor" },
+  ]);
+  assert.deepEqual(parseUpdates("Bump Azure.Storage.Blobs", "Pinned Azure.Storage.Blobs at `13.0.0`."), [
+    { name: "Azure.Storage.Blobs", from: null, to: "13.0.0", kind: "unknown" },
+  ]);
+  const pinned = readUpdates(PINNED_TITLE, PINNED_NUGET.replace("12.30.2", "13.0.0"));
+  assert.equal(pinned.parsed, true);
+  assert.equal(pinned.kind, "unknown", "a pinned major, beside routine updates, makes the PR a candidate");
+});
+
+test("the title says how many dependencies a PR updates, and names them when it can", () => {
+  const cases = [
+    ["Bump the npm-minor-patch group across 1 directory with 2 updates", { count: 2, names: [] }],
+    ["Bump the npm group across 2 directories with 3 updates", { count: 3, names: [] }],
+    ["chore: bump the npm-minor-and-patch group in /frontend with 1 update", { count: 1, names: [] }],
+    [PINNED_TITLE, { count: 4, names: ["Azure.Storage.Blobs"] }],
+    ["Bump Scalar.AspNetCore and 1 other", { count: 2, names: ["Scalar.AspNetCore"] }],
+    ["Bump lodash and axios in /web", { count: 2, names: ["lodash", "axios"] }],
+    ["build(deps): bump a, b and c", { count: 3, names: ["a", "b", "c"] }],
+    ["chore: bump vite from 8.3.7 to 8.3.8 in /web", { count: 1, names: ["vite"] }],
+    ["bump golang", { count: 1, names: ["golang"] }],
+  ];
+  for (const [title, expected] of cases) assert.deepEqual(expectedUpdates(title, ""), expected, title);
+  assert.deepEqual(expectedUpdates("Bump the npm-minor-patch group", GROUPED), { count: 2, names: [] });
+  assert.equal(expectedUpdates("Bump the npm-minor-patch group", "Dependency details were replaced."), null);
+  assert.equal(expectedUpdates("Update rails requirement from ~> 7.1 to ~> 8.0", ""), null);
+});
+
+test("a PR is parsed only when every dependency its title counts or names was read", () => {
+  assert.equal(readUpdates("Bump the npm-minor-patch group across 1 directory with 2 updates", GROUPED).parsed, true);
+  assert.equal(readUpdates("Bump decode-uri-component and expo-router", TOGETHER).parsed, true);
+  assert.equal(readUpdates("Bump jsdom from 30.1.3 to 31.0.0", SINGLE).parsed, true);
+  assert.equal(readUpdates(PINNED_TITLE, PINNED_NUGET).parsed, true);
+
+  // One dependency from two old versions in two directories counts once, so z's missing line shows.
+  const twice = ["Updates `x` from 1.0.0 to 2.0.0", "Updates `x` from 1.1.0 to 2.0.0", "Updates `y` from 1.0.0 to 1.0.1"].join("\n");
+  const grouped = readUpdates("Bump the npm group across 2 directories with 3 updates", twice);
+  assert.equal(grouped.updates.length, 3);
+  assert.equal(grouped.parsed, false);
+  assert.equal(grouped.expected, 3);
+
+  // A title that names its dependencies without a count.
+  const named = readUpdates("Bump lodash and axios in /web", "Updates `lodash` from 4.17.20 to 4.17.21");
+  assert.equal(named.parsed, false);
+  assert.deepEqual(named.missing, ["axios"]);
+  assert.equal(named.kind, "unknown", "a patch read while an update is missing is not routine");
+  // The count adds up only because a removed dependency was read in axios's place.
+  const swapped = readUpdates("Bump lodash and axios", "Removes `left-pad`\nUpdates `lodash` from 4.17.20 to 4.17.21");
+  assert.equal(swapped.parsed, false);
+  assert.deepEqual(swapped.missing, ["axios"]);
+
+  // A major among the updates read is still reported as a major.
+  const major = readUpdates("Bump Scalar.AspNetCore and 1 other", "Updated [Scalar.AspNetCore](https://x/y) from 3.1.1 to 4.0.0.");
+  assert.equal(major.parsed, false);
+  assert.equal(major.kind, "major");
+});
+
+test("a grouped body GitHub cut off at 65,536 characters is not parsed", () => {
+  const notes = `- ${"release notes ".repeat(3000)}`;
+  const full = [
+    "Bumps the npm-minor-patch group with 3 updates in the / directory: a, b and c.",
+    "Updates `a` from 1.0.0 to 1.0.1",
+    notes,
+    "Updates `b` from 2.0.0 to 2.1.0",
+    notes,
+    "Updates `c` from 3.0.0 to 4.0.0",
+  ].join("\n");
+  const body = full.slice(0, 65_536);
+  assert.ok(!body.includes("Updates `c`"));
+  for (const title of ["Bump the npm-minor-patch group across 1 directory with 3 updates", "Bump the npm-minor-patch group"]) {
+    const read = readUpdates(title, body);
+    assert.equal(read.updates.length, 2, title);
+    assert.equal(read.expected, 3, title);
+    assert.equal(read.parsed, false, title);
+    assert.equal(read.kind, "unknown", title);
+  }
+});
+
+test("the manifest review marker follows the title and the changed lines, not the shas", () => {
+  const pr = { number: 1, title: "Bump Scalar.AspNetCore and 1 other" };
+  const files = [
+    { filename: "Directory.Packages.props", status: "modified", sha: "1".repeat(40), patch: "@@ -10,3 +10,3 @@\n context\n-    <Pkg V=\"3.1.1\" />\n+    <Pkg V=\"3.2.0\" />" },
+    { filename: "packages.lock.json", status: "modified", sha: "2".repeat(40) },
+  ];
+  const marker = manifestReviewMarker(REPO, pr, files);
+  assert.match(marker, /^<!-- dependabot-manifest-review: [0-9a-f]{64} -->$/);
+  const rebased = [{ ...files[0], sha: "3".repeat(40), patch: files[0].patch.replace("-10,3 +10,3", "-12,3 +12,3").replace("context", "moved") }, files[1]];
+  assert.equal(manifestReviewMarker("Acme/Widgets", pr, [...rebased].reverse()), marker, "a rebase keeps it");
+  for (const [why, changed, changedFiles] of [
+    ["a retarget", pr, [{ ...files[0], patch: files[0].patch.replace("3.2.0", "3.2.1") }, files[1]]],
+    ["a new title", { ...pr, title: "Bump Scalar.AspNetCore and 2 others" }, files],
+    ["a file with no patch changed", pr, [files[0], { ...files[1], sha: "4".repeat(40) }]],
+    ["another PR", { ...pr, number: 2 }, files],
+  ]) {
+    assert.notEqual(manifestReviewMarker(REPO, changed, changedFiles), marker, why);
+  }
+});
+
+test("a version found only in the manifest marker's hex is not named", () => {
+  const marker = `<!-- dependabot-manifest-review: ${"6".repeat(64)} -->`;
+  const updates = [{ name: "dotnet/sdk", from: "5", to: "6", kind: "major" }];
+  const body = (text) => `✅ ${text}\n\n${marker}\n\n\u{1F916} Dependabot PR review by the Widgets routine`;
+  assert.equal(readVerdict([{ body: body("Manifest diff reviewed") }], updates, { manifestReviewMarker: marker }).verdict.versionsNamed, false);
+  const named = readVerdict([{ body: body("dotnet/sdk 6 reviewed") }], updates, { manifestReviewMarker: marker }).verdict;
+  assert.equal(named.versionsNamed, true);
+  assert.equal(named.manifestReviewed, true);
 });
 
 test("versions are classified by the first segment that moves", () => {
@@ -138,13 +262,30 @@ test("the latest marked comment is the verdict, and it counts for the versions i
     { user: PERSON, body: `✅ **VERIFIED LOW-RISK** jsdom 31.0.0 and \`bef136a\` reviewed${marker}`, created_at: "2026-11-03T00:00:00Z", html_url: "u2" },
   ];
   const { verdict, comments: others } = readVerdict(comments, updates);
-  assert.deepEqual(verdict, { kind: "low-risk", label: "Widgets", url: "u2", createdAt: "2026-11-03T00:00:00Z", versionsNamed: true });
+  assert.deepEqual(verdict, {
+    kind: "low-risk",
+    label: "Widgets",
+    url: "u2",
+    createdAt: "2026-11-03T00:00:00Z",
+    versionsNamed: true,
+    manifestReviewed: null,
+  });
   assert.deepEqual(others.map((comment) => comment.body), ["hold this until the release"]);
   assert.equal(readVerdict(comments.slice(0, 1), updates).verdict.kind, "needs-effort");
   assert.equal(readVerdict(comments.slice(0, 1), updates).verdict.versionsNamed, false);
   const retargeted = [{ name: "jsdom", from: "30.1.3", to: "31.0.1", kind: "major" }];
   assert.equal(readVerdict(comments, retargeted).verdict.versionsNamed, false);
   assert.equal(readVerdict([], updates).verdict, null);
+});
+
+test("a verdict must name a pinned update's current version", () => {
+  const comments = [{
+    user: PERSON,
+    body: "✅ **VERIFIED LOW-RISK** Azure.Storage.Blobs 12.30.2, Npgsql 10.0.4 and Scalar.AspNetCore 3.2.0\n\n\u{1F916} Dependabot PR review by the Widgets routine",
+  }];
+  assert.equal(readVerdict(comments, parseUpdates(PINNED_TITLE, PINNED_NUGET)).verdict.versionsNamed, true);
+  const retargeted = parseUpdates(PINNED_TITLE, PINNED_NUGET.replace("12.30.2", "13.0.0"));
+  assert.equal(readVerdict(comments, retargeted).verdict.versionsNamed, false);
 });
 
 test("a low-risk verdict stays current only while it names the versions and the checks have not failed", () => {
@@ -155,6 +296,9 @@ test("a low-risk verdict stays current only while it names the versions and the 
   assert.equal(verdictCurrent({ ...lowRisk, versionsNamed: false }, { state: "passed" }), false);
   assert.equal(verdictCurrent({ kind: "needs-effort", versionsNamed: false }, { state: "failed" }), true);
   assert.equal(verdictCurrent({ kind: "needs-effort", versionsNamed: true }, { state: "passed" }), true);
+  assert.equal(verdictCurrent({ ...lowRisk, manifestReviewed: true }, { state: "passed" }), true);
+  assert.equal(verdictCurrent({ ...lowRisk, manifestReviewed: false }, { state: "passed" }), false);
+  assert.equal(verdictCurrent({ kind: "needs-effort", versionsNamed: true, manifestReviewed: false }, { state: "passed" }), true);
   assert.equal(verdictCurrent(null, { state: "failed" }), false);
 });
 
@@ -177,7 +321,7 @@ function pull(number, overrides = {}) {
   };
 }
 
-function fakeRepo({ pulls, checkRuns = {}, commits = {}, comments = {} }) {
+function fakeRepo({ pulls, checkRuns = {}, commits = {}, comments = {}, files = {} }) {
   const calls = [];
   const rest = (endpoint) => {
     calls.push(endpoint);
@@ -190,6 +334,8 @@ function fakeRepo({ pulls, checkRuns = {}, commits = {}, comments = {} }) {
       return { check_runs: typeof value === "function" ? value() : (value ?? []) };
     }
     if (/\/commits\/\w+\/status$/.test(endpoint)) return { statuses: [] };
+    match = endpoint.match(/^repos\/acme\/widgets\/pulls\/(\d+)\/files\?per_page=100$/);
+    if (match) return files[match[1]] ?? [];
     match = endpoint.match(/pulls\/(\d+)\/commits/);
     if (match) return commits[match[1]] ?? [{ sha: HEAD, author: BOT }];
     match = endpoint.match(/issues\/(\d+)\/comments/);
@@ -219,6 +365,51 @@ test("list gives only Dependabot's open PRs, oldest first, each read on its curr
   assert.equal(second.maintainedByDependabot, false);
   assert.deepEqual(second.othersCommitted, [NEW_HEAD]);
   assert.ok(repo.calls.includes(`repos/${REPO}/commits/${NEW_HEAD}/check-runs?per_page=100`));
+  assert.ok(!repo.calls.some((call) => call.includes("/files")), "a parsed PR's diff is not read");
+  assert.equal(first.parsed, true);
+  assert.equal(first.manifestReviewMarker, null);
+});
+
+test("a PR reviewed from its manifest diff stays reviewed until its title or diff changes", () => {
+  const props = (version) => [{
+    filename: "Directory.Packages.props",
+    status: "modified",
+    sha: "1".repeat(40),
+    patch: `@@ -4,1 +4,1 @@\n-<Pkg Include="Scalar.AspNetCore" Version="3.0.0" />\n+<Pkg Include="Scalar.AspNetCore" Version="${version}" />`,
+  }];
+  const comments = { 1: [] };
+  const passed = [{ name: "test", status: "completed", conclusion: "success" }];
+  const state = { pulls: [pull(1, { title: "Bump Scalar.AspNetCore and 1 other", body: NUGET })], checkRuns: { [HEAD]: passed }, comments, files: { 1: props("3.1.1") } };
+  const list = () => runCommand(["list", "--repo", REPO], { rest: fakeRepo(state).rest }).prs[0];
+
+  const unreviewed = list();
+  assert.equal(unreviewed.parsed, false);
+  assert.equal(unreviewed.expected, 2);
+  assert.deepEqual(unreviewed.missing, []);
+  assert.equal(unreviewed.kind, "unknown");
+  assert.match(unreviewed.manifestReviewMarker, /^<!-- dependabot-manifest-review: [0-9a-f]{64} -->$/);
+
+  const routine = "\u{1F916} Dependabot PR review by the Widgets routine";
+  const text = "✅ **VERIFIED LOW-RISK** Scalar.AspNetCore 3.1.1 and Azure.Storage.Blobs 12.30.2, from the manifest diff";
+  comments[1].push({ user: PERSON, body: `${text}\n\n${routine}` });
+  assert.equal(list().verdict.current, false, "without the marker, the manifest review is not recorded");
+
+  comments[1].push({ user: PERSON, body: `${text}\n\n${unreviewed.manifestReviewMarker}\n${routine}` });
+  assert.equal(list().verdict.current, true);
+  state.pulls = [pull(1, { title: "Bump Scalar.AspNetCore and 1 other", body: NUGET, head: { ...pull(1).head, sha: NEW_HEAD }, base: { sha: "c".repeat(40) } })];
+  state.checkRuns[NEW_HEAD] = passed;
+  assert.equal(list().verdict.current, true, "a rebase keeps the review");
+
+  state.checkRuns[NEW_HEAD] = [{ name: "test", status: "completed", conclusion: "failure" }];
+  assert.equal(list().verdict.current, false, "failed checks end it");
+  state.checkRuns[NEW_HEAD] = passed;
+
+  state.files[1] = props("3.1.2");
+  assert.equal(list().verdict.current, false, "a retarget ends it");
+
+  state.files[1] = props("3.1.1");
+  comments[1].push({ user: PERSON, body: `⚠️ **NEEDS EFFORT** Scalar.AspNetCore 3.1.1 breaks\n\n${routine}` });
+  assert.equal(list().verdict.current, true, "a needs-effort verdict stays current without the marker");
 });
 
 test("a mergeable state GitHub has not computed yet is read again, a few times", () => {

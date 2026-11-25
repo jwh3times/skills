@@ -62,13 +62,18 @@ out, and report, a PR that is a `draft`, carries a label containing `hold`, `do-
   asks. A `low-risk` verdict stops being current when it no longer names the PR's versions
   (Dependabot retargeted it) or when the PR's checks have failed since; report it as stale, never
   as a basis for landing, and review the PR again: the new verdict, the latest marked comment,
-  replaces it.
+  replaces it. On a PR with `parsed: false`, a `low-risk` verdict also counts only while it
+  carries the PR's current `manifestReviewMarker` (step 6), which changes when the PR's title or
+  its diff does. A `needs-effort` verdict stays current either way.
 - **ROUTINE:** `kind` is `minor`, `patch`, `digest` or `removed`, and no update matches the `Review
   triggers`. It needs no release-note research, but step 3 still applies.
 - **CANDIDATE:** `kind` is `major`, `unknown`, `downgrade` or `suffix`, or an update matches the
-  `Review triggers`. A grouped PR is one candidate covering every member. With `parsed: false` (a
-  person replaced the body), read the versions from the manifests' diff
-  (`gh api "repos/<owner>/<repo>/pulls/<n>/files"`), and treat it as a candidate.
+  `Review triggers`. A grouped PR is one candidate covering every member. With `parsed: false`, not
+  every update could be read: a person replaced the body, GitHub cut a long one off, or it reads
+  fewer dependencies than the title names (`expected` gives how many, `missing` the names the title
+  gives that no update line did). Read every update's versions from the manifests' diff (`gh api
+  "repos/<owner>/<repo>/pulls/<n>/files"`), and treat it as a candidate. An update with `from:
+  null` is pinned: read its old version from the same diff, or note there that it is new.
 
 A candidate is something to investigate in step 5, not yet a verdict.
 
@@ -148,6 +153,12 @@ Rules, each from a verdict that once went wrong:
 
 Write each verdict to its own file, named for the repository and the PR. It starts with `✅
 **VERIFIED LOW-RISK**` or `⚠️ **NEEDS EFFORT**`, and its last line is `marker`, exactly.
+
+On a PR with `parsed: false`, the verdict names every dependency's new version as read from the
+manifests' diff, and the line before `marker` is the PR's `manifestReviewMarker`, exactly. It
+records what was reviewed, so the next run, finding the same title and diff, does not review and
+post it again. If the PR changed during the review, run `list --pr <n>` again and review what
+changed before copying its new marker.
 
 ## 7. Post the verdicts
 
