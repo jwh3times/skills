@@ -28,12 +28,14 @@
 //     computing them (null and `unknown`, which they stay if it never finishes).
 //   - `maintainedByDependabot`: false once a commit by anyone else is on the branch (a branch
 //     update merging `main` in, or a fix), after which Dependabot no longer rebases it.
-//   - `verdict`: the latest comment carrying the review marker, its `kind` (low-risk or
+//   - `verdict`: the latest comment carrying the review marker by the repository's owner, a member
+//     or a collaborator (`author_association`), its `kind` (low-risk or
 //     needs-effort, by its first character), `versionsNamed`, true when it names every update's
 //     new version, `manifestReviewed`, when `parsed` is false: whether it carries the current
 //     `manifestReviewMarker` (null otherwise), and `current`: false for a low-risk verdict that no
 //     longer names the versions, lacks the current manifest marker, or whose PR's checks have
-//     since failed; `comments`: the other comments people wrote.
+//     since failed. `ignoredVerdicts`: each marked comment by anyone else, with its author,
+//     association and link, which never counts. `comments`: the other comments people wrote.
 // `marker` is the closing line a verdict comment carries, with `--label` (default: the repository's
 // name) as the name in it.
 //
@@ -57,6 +59,9 @@ const PASSED = new Set(["success", "neutral", "skipped"]);
 // Furthest-reaching first: a PR's `kind` is the first of these any of its updates has.
 export const KIND_ORDER = ["major", "unknown", "downgrade", "suffix", "minor", "patch", "digest", "removed"];
 const MARKER = /Dependabot PR review by the (.+?) routine/;
+// Who can write a verdict: the repository's owner, an organization member or a collaborator, as
+// GitHub's `author_association` names them.
+const REVIEWERS = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
 const MANIFEST_MARKER = /^<!-- dependabot-manifest-review: [0-9a-f]{64} -->$/;
 
 export class DependabotError extends Error {}
@@ -321,13 +326,23 @@ function versionNamed(text, version) {
 
 // With `manifestReviewMarker` (a PR whose updates were not all read), the verdict must also carry
 // that marker, and a version counts as named only outside the marker's line, whose hex could hold it.
+// A marked comment by anyone else is never a verdict: it is listed in `ignored`, for the skill to
+// report, and a missing `author_association` counts as anyone else.
 export function readVerdict(comments, updates, { manifestReviewMarker = null } = {}) {
   let verdict = null;
   const others = [];
+  const ignored = [];
   for (const comment of comments) {
     const body = comment.body ?? "";
     const marker = body.match(MARKER);
-    if (marker) {
+    if (marker && !REVIEWERS.has(comment.author_association)) {
+      ignored.push({
+        author: comment.user?.login ?? null,
+        association: comment.author_association ?? null,
+        url: comment.html_url ?? null,
+        createdAt: comment.created_at ?? null,
+      });
+    } else if (marker) {
       const first = body.trimStart();
       const lines = body.split(/\r?\n/).map((line) => line.trim());
       const text = lines.filter((line) => !MANIFEST_MARKER.test(line)).join("\n");
@@ -345,7 +360,7 @@ export function readVerdict(comments, updates, { manifestReviewMarker = null } =
       others.push({ author: comment.user?.login ?? null, createdAt: comment.created_at ?? null, body: body.slice(0, 500) });
     }
   }
-  return { verdict, comments: others };
+  return { verdict, comments: others, ignored };
 }
 
 // A low-risk verdict was reached on a green PR for the versions it names. It stops counting when
@@ -382,7 +397,7 @@ function readOne(rest, sleep, options, pr) {
   const comments = rest(`repos/${options.repo}/issues/${full.number}/comments?per_page=100`);
   const othersCommitted = commits.filter((commit) => commit.author?.login !== BOT).map((commit) => commit.sha);
   const checks = summarizeChecks(checkRuns, status);
-  const { verdict, comments: others } = readVerdict(comments, updates, { manifestReviewMarker: marker });
+  const { verdict, comments: others, ignored } = readVerdict(comments, updates, { manifestReviewMarker: marker });
   if (verdict) verdict.current = verdictCurrent(verdict, checks);
   return {
     number: full.number,
@@ -408,6 +423,7 @@ function readOne(rest, sleep, options, pr) {
     maintainedByDependabot: othersCommitted.length === 0,
     othersCommitted,
     verdict,
+    ignoredVerdicts: ignored,
     comments: others,
   };
 }

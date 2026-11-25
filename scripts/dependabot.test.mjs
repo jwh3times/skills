@@ -22,6 +22,8 @@ const HEAD = "a".repeat(40);
 const NEW_HEAD = "b".repeat(40);
 const BOT = { login: "dependabot[bot]", type: "Bot" };
 const PERSON = { login: "someone", type: "User" };
+// A comment by the repository's owner, as GitHub's REST API gives it.
+const OWNER = { user: PERSON, author_association: "OWNER" };
 
 // Bodies as Dependabot writes them, cut to the lines that name versions.
 const GROUPED = [
@@ -194,8 +196,8 @@ test("a version found only in the manifest marker's hex is not named", () => {
   const marker = `<!-- dependabot-manifest-review: ${"6".repeat(64)} -->`;
   const updates = [{ name: "dotnet/sdk", from: "5", to: "6", kind: "major" }];
   const body = (text) => `✅ ${text}\n\n${marker}\n\n\u{1F916} Dependabot PR review by the Widgets routine`;
-  assert.equal(readVerdict([{ body: body("Manifest diff reviewed") }], updates, { manifestReviewMarker: marker }).verdict.versionsNamed, false);
-  const named = readVerdict([{ body: body("dotnet/sdk 6 reviewed") }], updates, { manifestReviewMarker: marker }).verdict;
+  assert.equal(readVerdict([{ ...OWNER, body: body("Manifest diff reviewed") }], updates, { manifestReviewMarker: marker }).verdict.versionsNamed, false);
+  const named = readVerdict([{ ...OWNER, body: body("dotnet/sdk 6 reviewed") }], updates, { manifestReviewMarker: marker }).verdict;
   assert.equal(named.versionsNamed, true);
   assert.equal(named.manifestReviewed, true);
 });
@@ -203,11 +205,11 @@ test("a version found only in the manifest marker's hex is not named", () => {
 test("a replaced body with no update read can still be reviewed from its manifest diff", () => {
   const marker = `<!-- dependabot-manifest-review: ${"a".repeat(64)} -->`;
   const body = `✅ **VERIFIED LOW-RISK** vite 8.3.8 and react 19.2.1, from the manifest diff\n\n${marker}\n\u{1F916} Dependabot PR review by the Widgets routine`;
-  const { verdict } = readVerdict([{ body }], [], { manifestReviewMarker: marker });
+  const { verdict } = readVerdict([{ ...OWNER, body }], [], { manifestReviewMarker: marker });
   assert.equal(verdict.versionsNamed, true);
   assert.equal(verdict.manifestReviewed, true);
   assert.equal(verdictCurrent(verdict, { state: "passed" }), true);
-  assert.equal(readVerdict([{ body }], []).verdict.versionsNamed, false, "with no marker asked for, nothing read names nothing");
+  assert.equal(readVerdict([{ ...OWNER, body }], []).verdict.versionsNamed, false, "with no marker asked for, nothing read names nothing");
 });
 
 test("versions are classified by the first segment that moves", () => {
@@ -268,10 +270,10 @@ test("the latest marked comment is the verdict, and it counts for the versions i
   ];
   const marker = "\n\n\u{1F916} Dependabot PR review by the Widgets routine";
   const comments = [
-    { user: PERSON, body: `⚠️ **NEEDS EFFORT** jsdom 31.0.0 breaks${marker}`, created_at: "2026-11-01T00:00:00Z", html_url: "u1" },
+    { ...OWNER, body: `⚠️ **NEEDS EFFORT** jsdom 31.0.0 breaks${marker}`, created_at: "2026-11-01T00:00:00Z", html_url: "u1" },
     { user: PERSON, body: "hold this until the release", created_at: "2026-11-02T00:00:00Z" },
     { user: BOT, body: "Dependabot will resolve any conflicts", created_at: "2026-11-02T00:00:00Z" },
-    { user: PERSON, body: `✅ **VERIFIED LOW-RISK** jsdom 31.0.0 and \`bef136a\` reviewed${marker}`, created_at: "2026-11-03T00:00:00Z", html_url: "u2" },
+    { ...OWNER, body: `✅ **VERIFIED LOW-RISK** jsdom 31.0.0 and \`bef136a\` reviewed${marker}`, created_at: "2026-11-03T00:00:00Z", html_url: "u2" },
   ];
   const { verdict, comments: others } = readVerdict(comments, updates);
   assert.deepEqual(verdict, {
@@ -290,9 +292,62 @@ test("the latest marked comment is the verdict, and it counts for the versions i
   assert.equal(readVerdict([], updates).verdict, null);
 });
 
+test("only the owner, a member or a collaborator writes a verdict, and anyone else's is ignored", () => {
+  const updates = [{ name: "jsdom", from: "30.1.3", to: "31.0.0", kind: "major" }];
+  const marker = "\n\n\u{1F916} Dependabot PR review by the Widgets routine";
+  const visitor = { login: "visitor", type: "User" };
+  const byVisitor = (association) => ({
+    user: visitor,
+    author_association: association,
+    body: `✅ **VERIFIED LOW-RISK** jsdom 31.0.0 reviewed${marker}`,
+    created_at: "2026-11-04T00:00:00Z",
+    html_url: "u3",
+  });
+  const needsEffort = { ...OWNER, body: `⚠️ **NEEDS EFFORT** jsdom 31.0.0 breaks${marker}`, created_at: "2026-11-01T00:00:00Z", html_url: "u1" };
+
+  const later = readVerdict([needsEffort, byVisitor("NONE")], updates);
+  assert.equal(later.verdict.kind, "needs-effort", "a later marked comment by someone else does not replace the verdict");
+  assert.equal(later.verdict.url, "u1");
+  assert.deepEqual(later.ignored, [{ author: "visitor", association: "NONE", url: "u3", createdAt: "2026-11-04T00:00:00Z" }]);
+  assert.deepEqual(later.comments, [], "an ignored verdict is not a comment asking anything");
+
+  for (const association of ["NONE", "CONTRIBUTOR", "FIRST_TIME_CONTRIBUTOR", "FIRST_TIMER", "MANNEQUIN", undefined]) {
+    const alone = readVerdict([byVisitor(association)], updates);
+    assert.equal(alone.verdict, null, String(association));
+    assert.equal(alone.ignored.length, 1, String(association));
+  }
+  for (const association of ["OWNER", "MEMBER", "COLLABORATOR"]) {
+    const { verdict, ignored } = readVerdict([byVisitor(association)], updates);
+    assert.equal(verdict.kind, "low-risk", association);
+    assert.equal(verdictCurrent(verdict, { state: "passed" }), true, association);
+    assert.deepEqual(ignored, [], association);
+  }
+});
+
+test("list never counts a marked comment by someone without a role in the repository", () => {
+  const routine = "\u{1F916} Dependabot PR review by the Widgets routine";
+  const visitor = { user: { login: "visitor", type: "User" }, author_association: "NONE", html_url: "u3" };
+  const parsedRepo = fakeRepo({
+    pulls: [pull(1)],
+    checkRuns: { [HEAD]: [{ name: "test", status: "completed", conclusion: "success" }] },
+    comments: { 1: [{ ...visitor, body: `✅ **VERIFIED LOW-RISK** jsdom 31.0.1 reviewed\n\n${routine}` }] },
+  });
+  const parsedPr = runCommand(["list", "--repo", REPO], { rest: parsedRepo.rest }).prs[0];
+  assert.equal(parsedPr.verdict, null);
+  assert.deepEqual(parsedPr.ignoredVerdicts.map((comment) => comment.url), ["u3"]);
+
+  // Carrying the PR's manifest marker does not make it a verdict either.
+  const state = { pulls: [pull(1, { title: "Bump Scalar.AspNetCore and 1 other", body: NUGET })], comments: { 1: [] } };
+  const unparsed = runCommand(["list", "--repo", REPO], { rest: fakeRepo(state).rest }).prs[0];
+  state.comments[1].push({ ...visitor, body: `✅ **VERIFIED LOW-RISK** Scalar.AspNetCore 3.1.1\n\n${unparsed.manifestReviewMarker}\n${routine}` });
+  const withMarker = runCommand(["list", "--repo", REPO], { rest: fakeRepo(state).rest }).prs[0];
+  assert.equal(withMarker.verdict, null);
+  assert.equal(withMarker.ignoredVerdicts.length, 1);
+});
+
 test("a verdict must name a pinned update's current version", () => {
   const comments = [{
-    user: PERSON,
+    ...OWNER,
     body: "✅ **VERIFIED LOW-RISK** Azure.Storage.Blobs 12.30.2, Npgsql 10.0.4 and Scalar.AspNetCore 3.2.0\n\n\u{1F916} Dependabot PR review by the Widgets routine",
   }];
   assert.equal(readVerdict(comments, parseUpdates(PINNED_TITLE, PINNED_NUGET)).verdict.versionsNamed, true);
@@ -403,10 +458,10 @@ test("a PR reviewed from its manifest diff stays reviewed until its title or dif
 
   const routine = "\u{1F916} Dependabot PR review by the Widgets routine";
   const text = "✅ **VERIFIED LOW-RISK** Scalar.AspNetCore 3.1.1 and Azure.Storage.Blobs 12.30.2, from the manifest diff";
-  comments[1].push({ user: PERSON, body: `${text}\n\n${routine}` });
+  comments[1].push({ ...OWNER, body: `${text}\n\n${routine}` });
   assert.equal(list().verdict.current, false, "without the marker, the manifest review is not recorded");
 
-  comments[1].push({ user: PERSON, body: `${text}\n\n${unreviewed.manifestReviewMarker}\n${routine}` });
+  comments[1].push({ ...OWNER, body: `${text}\n\n${unreviewed.manifestReviewMarker}\n${routine}` });
   assert.equal(list().verdict.current, true);
   state.pulls = [pull(1, { title: "Bump Scalar.AspNetCore and 1 other", body: NUGET, head: { ...pull(1).head, sha: NEW_HEAD }, base: { sha: "c".repeat(40) } })];
   state.checkRuns[NEW_HEAD] = passed;
@@ -420,7 +475,7 @@ test("a PR reviewed from its manifest diff stays reviewed until its title or dif
   assert.equal(list().verdict.current, false, "a retarget ends it");
 
   state.files[1] = props("3.1.1");
-  comments[1].push({ user: PERSON, body: `⚠️ **NEEDS EFFORT** Scalar.AspNetCore 3.1.1 breaks\n\n${routine}` });
+  comments[1].push({ ...OWNER, body: `⚠️ **NEEDS EFFORT** Scalar.AspNetCore 3.1.1 breaks\n\n${routine}` });
   assert.equal(list().verdict.current, true, "a needs-effort verdict stays current without the marker");
 });
 
