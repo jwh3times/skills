@@ -26,7 +26,7 @@ holland-vip, caitlyn-holland-vip, magic-agenda, valleys-at-ashebrook-hoa, LeaseB
 Work through the repositories one at a time, in the order above, never in parallel: they share this container's disk. If your agent tool offers a fork, run each repository in one, waiting for it before the next, with the instruction "Handle ONLY jwh3times/<repo>: follow its .agents/skills/dependabot/SKILL.md as the scheduled review, and return its report." After each repository, delete its node_modules, .venv, .NET bin/ and obj/ directories and build outputs; the package caches can stay.
 
 ## Summary
-Grouped by repository: each PR's verdict with its comment URL, PRs already reviewed, routine PRs left alone with their CI state, PRs still pending, any red `main` shares, settings the skill found missing, and NO WRITE ACCESS, NOT INSTALLED or errored repositories. This summary is a run log; post it nowhere.
+Grouped by repository: each PR's verdict with its comment URL, each of its `ignoredVerdicts` with its author and link, PRs already reviewed, routine PRs left alone with their CI state, PRs still pending, any red `main` shares, settings the skill found missing, and NO WRITE ACCESS, NOT INSTALLED or errored repositories. This summary is a run log; post it nowhere.
 
 ## Notification
 Send at most one push notification, and only after the summary is written: take every count in it from the summary itself, never from a tally kept while repositories were still running.

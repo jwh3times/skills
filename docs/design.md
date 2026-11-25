@@ -654,6 +654,11 @@ per-project install and the shared scripts are recorded under Architecture.
       so the PR is a candidate reviewed from its manifest diff. Its low-risk verdict carries the
       PR's `manifestReviewMarker`, a hash of the title and each file's changed lines: a rebase
       that changes neither keeps it current, and a retarget makes it stale.
+    - **Only a reviewer's marked comment is a verdict** (2026-11-24). `verdict` is the latest
+      marked comment whose `author_association` is `OWNER`, `MEMBER` or `COLLABORATOR`. A marked
+      comment by anyone else, or with no association, goes in `ignoredVerdicts` with its author,
+      association, link and time: it never counts, whatever it says, and the skill reports each
+      one. The scheduled review posts from an account with push access, which is one of the three.
     - **A fix on a Dependabot branch** waits for the user, and the branch is caught up by
       updating it from then on, never `@dependabot rebase`, which drops the fix (GT).
     - **The stamped changelog line is made inert, in `stamp-changelog.mjs`** (2026-11-22). The
