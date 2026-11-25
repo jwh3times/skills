@@ -12,7 +12,7 @@ You are the scheduled Dependabot review for the repositories below (owner jwh3ti
 This routine's standing instruction from the user: post each verdict the skill reaches (its step 7). That comment is your only write. Never merge, approve, close, label, edit or push, and never post an `@dependabot` command.
 
 ## Repositories
-holland-vip, caitlyn-holland-vip, magic-agenda, valleys-at-ashebrook-hoa, LeaseBook, apexracers, GuardianTracker, Nearcited, PressGolf, TirelessInvest, speed-of-light, hopover, skills.
+holland-vip, caitlyn-holland-vip, magic-agenda, valleys-at-ashebrook-hoa, LeaseBook, apexracers, GuardianTracker, Nearcited, PressGolf, TirelessInvest, speed-of-light, hopover, RaceEngineerOverlays, skills.
 
 ## This environment
 - `gh` is authenticated. GitHub's GraphQL API answers 403 here, so `gh pr list/view/checks/comment/checkout` all fail. The skill's helper, `node .agents/skills/dependabot/dependabot.mjs`, uses only REST; use it, and REST calls (`gh api repos/...`), for everything else.

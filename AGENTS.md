@@ -2,11 +2,12 @@
 
 Source for the agent skills published as `jwh3times/skills` and installed into the consumer
 repositories under `~/dev/`: apexracers, caitlyn-holland-vip, causet, guardiantracker, holland-vip,
-hopover, leasebook, magic-agenda, Nearcited, PressGolf, speed-of-light, TirelessInvest,
-valleys-at-ashebrook-hoa. A new consumer joins this list, `consumers.json` and the Status line of
-`docs/design.md`. One with Dependabot (`.github/dependabot.yml`) also joins the Repositories list
-in `docs/routines/dependabot-review.md` and, on claude.ai, the live routine's prompt and sources;
-this repository is on that list too, for its GitHub Actions. `docs/design.md` is the architecture; read it before changing how a skill is structured,
+hopover, leasebook, magic-agenda, Nearcited, PressGolf, RaceEngineerOverlays, speed-of-light,
+TirelessInvest, valleys-at-ashebrook-hoa. A new consumer joins this list, `consumers.json` and the
+Status line of `docs/design.md`. One with Dependabot (`.github/dependabot.yml`) also joins the
+Repositories list in `docs/routines/dependabot-review.md` and, on claude.ai, the live routine's
+prompt and sources; this repository is on that list too, for its GitHub Actions.
+`docs/design.md` is the architecture; read it before changing how a skill is structured,
 configured, or installed.
 
 ## Skill bodies

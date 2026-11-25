@@ -17,7 +17,8 @@ every consumer carries, which `sync-agents.mjs` registers as a hook. `test-prove
 `records-audit` written 2026-11-23 (Decision 14, the `test-proof.md` catalog), with the board's
 `Due` field, and joined the shared install command the same way. speed-of-light (speed-of-light#3)
 and hopover (hopover#1) joined 2026-11-24, bootstrapped on TirelessInvest's layout and already on
-`stamp-on-tag`, so both take sync pull requests from the start.
+`stamp-on-tag`, so both take sync pull requests from the start. RaceEngineerOverlays
+(RaceEngineerOverlays#3) joined 2026-11-25, bootstrapped on speed-of-light's layout the same way.
 
 ## Goal
 
