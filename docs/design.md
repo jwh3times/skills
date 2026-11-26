@@ -707,7 +707,8 @@ per-project install and the shared scripts are recorded under Architecture.
       so ask means denied there. Windows Bash hazards (`node -e` with a backslash, long heredocs,
       `jq`, `gh --body`, `grep $'\x00'`, bare `python`) only warn, and a PostToolUse pass warns when
       a file just written holds a NUL byte. Each repository adds rules in `docs/agents/guard.md`
-      (the `guard` catalog).
+      (the `guard` catalog), and names there the wrappers that run Git for it (`Git wrappers`,
+      skills#92), whose commands then meet the git rules, `-C` included.
     - **An internal error asks; nothing blocks on failure.** A guard that throws asks with
       "guard failed: ..." and exits 0, and `onFailure` stays unset, so a guard that cannot start
       lets the call through. A broken guard costs prompts, never a locked-out session. A malformed

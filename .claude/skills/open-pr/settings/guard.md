@@ -2,10 +2,10 @@
 # Topic: guard
 
 `docs/agents/guard.md` — the commands and paths this repository's guard stops, on top of the rules
-it applies everywhere. `scripts/guard.mjs` runs before every shell command and file edit an agent
-makes, in a session, a subagent or a scheduled run, so a rule written here holds whether or not
-the agent read it. Each setting below is a `##` heading in that file; other headings and prose
-outside them are ignored.
+it applies everywhere, and the wrappers whose commands those rules read as Git's.
+`scripts/guard.mjs` runs before every shell command and file edit an agent makes, in a session, a
+subagent or a scheduled run, so a rule written here holds whether or not the agent read it. Each
+setting below is a `##` heading in that file; other headings and prose outside them are ignored.
 
 Every value is `none` (or a `discover:` value, which sets no rules) or a bulleted list, one rule
 per bullet:
@@ -65,7 +65,8 @@ a sandbox: a rule catches a command as written, never every way to reach the sam
 - **Value:** `none`, or the command prefixes that run Git with the words after them, one per
   bullet with what the wrapper is (`` - `cst git` — runs Git with whatever follows. ``). The
   universal git rules (force-pushes, pushes to `main`, branch and push deletes, discarding a dirty
-  tree) then read `<prefix> <arguments>` as `git <arguments>`, `-C` included. The prefix's words
+  tree, `git rm` of a protected path) then read `<prefix> <arguments>` as `git <arguments>`, `-C`
+  included. The prefix's words
   are matched literally, the first as a program name (`cst.exe` is `cst`), and the longest prefix
   wins, so list each form: a wrapper that runs Git both as `cst git <arguments>` and as
   `cst <arguments>` takes both bullets. Repository rules still match the command as written, so

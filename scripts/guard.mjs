@@ -13,7 +13,8 @@
 // failed: ..." and the script always exits 0: a broken guard must not lock every tool out.
 //
 // Universal rules are below; each repository adds its own in `docs/agents/guard.md` (the `guard`
-// settings topic). `scripts/sync-agents.mjs` registers this script in `.claude/settings.json`.
+// settings topic), and names there the wrappers that run Git, so the universal git rules reach
+// them too. `scripts/sync-agents.mjs` registers this script in `.claude/settings.json`.
 //
 // This file is shared verbatim across repositories. Change it in jwh3times/skills, copy it to all.
 
@@ -967,7 +968,7 @@ const PS_SWITCHES = /^-(force|recurse|append|nonewline|passthru|whatif|confirm|n
 
 // The words naming files a command deletes or overwrites, each marked `removes` when the path
 // itself goes (a removal or a move's source) rather than gets written. Redirect targets count.
-export function writtenPaths(command) {
+export function writtenPaths(command, wrappers = []) {
   const { program, shell } = command;
   const args = command.words.map((text, i) => ({ text, dynamic: command.dynamic[i] })).slice(1);
   const named = [];
@@ -992,11 +993,12 @@ export function writtenPaths(command) {
   if (REMOVERS.has(program)) add([...named, ...positional], true);
   else if (COPIERS.has(program)) add(target ? [target] : named.length ? named : positional.slice(-1), false);
   else if (WRITERS.has(program)) add(named.length ? named : program === "tee" || program === "truncate" ? positional : positional.slice(0, 1), false);
-  else if (program === "git") {
+  else if (gitStart(command.words, wrappers) > 0) {
+    const git = args.slice(gitStart(command.words, wrappers) - 1);
     let k = 0;
-    while (args[k]?.text.startsWith("-")) k += GIT_GLOBAL_WITH_VALUE.has(args[k].text) ? 2 : 1;
-    if (args[k]?.text === "rm" && !args.some((word) => word.text === "--cached")) {
-      add(args.slice(k + 1).filter((word) => !word.text.startsWith("-")), true);
+    while (git[k]?.text.startsWith("-")) k += GIT_GLOBAL_WITH_VALUE.has(git[k].text) ? 2 : 1;
+    if (git[k]?.text === "rm" && !git.some((word) => word.text === "--cached")) {
+      add(git.slice(k + 1).filter((word) => !word.text.startsWith("-")), true);
     }
   }
   return paths;
@@ -1200,7 +1202,7 @@ function classifyShell(text, shell, tool, cwd, ctx, settings) {
       findings.push(...windowsWarnings(command, { platform: ctx.platform, tool }));
     }
     if (settings.protected.length) {
-      for (const word of writtenPaths(command)) {
+      for (const word of writtenPaths(command, settings.wrappers)) {
         const abs = resolvePath(dirs[i], globBase(word.text), { platform: ctx.platform, home: ctx.home, dynamic: word.dynamic });
         const verb = word.removes ? "removes or moves" : "writes";
         findings.push(...protectedFindings(abs, verb, settings, ctx, { removes: word.removes }));

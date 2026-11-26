@@ -438,8 +438,23 @@ test("a Git wrapper's commands meet the shared git rules; repository rules match
   }
   // A wrapper comes from the setting; without it, `cst` is just a program.
   assert.equal(bash("cst git reset --hard", { git: DIRTY }), null);
-  // Text that cannot be parsed asks when a wrapper runs a risky git subcommand.
+  // The longest prefix wins wherever it is listed.
+  const reversed = { "/repo/docs/agents/guard.md": "## Git wrappers\n\n- `cst` — a.\n- `cst git` — b.\n" };
+  assert.deepEqual(rules(bash("cst git push --force origin feat/x", { files: reversed, git: DIRTY })), ["D5"]);
+  // Text that cannot be parsed asks when a wrapper, of one word or two, runs a risky git subcommand.
   assert.match(bash("cst push --force 'open", dirty).reason, /Could not parse[^\n]*cst push --force/);
+  assert.match(bash("cst git push --force 'open", dirty).reason, /Could not parse[^\n]*cst git push --force/);
+  // A wrapped `git rm` meets the protected paths as `git rm` does.
+  const protectedMd = `${WRAPPERS_MD}\n## Protected paths\n\n- \`^\\.env$\` — the local secrets.\n`;
+  const withEnv = { files: { "/repo/docs/agents/guard.md": protectedMd, "/repo/.env": "" }, git: CLEAN };
+  for (const command of ["git rm .env", "cst git rm .env", "cst rm -f .env"]) {
+    assert.equal(bash(command, withEnv)?.decision, "ask", command);
+  }
+  assert.equal(bash("cst rm --cached .env", withEnv), null);
+  // The dirty check reads the directory a wrapped `-C` names.
+  const ctx = fakeCtx(repo(dirty));
+  evaluate({ tool: "Bash", input: { command: "cst git -C ../other reset --hard" }, cwd: "/repo" }, ctx);
+  assert.ok(ctx.calls.some((call) => call.startsWith("/other: git status")), ctx.calls.join("\n"));
 });
 
 test("git -C after a wrapper moves the directory its dirty check reads", () => {
