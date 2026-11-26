@@ -32,11 +32,12 @@
 //     or a collaborator (`author_association`), its `kind` (low-risk or
 //     needs-effort, by its first character), `versionsNamed`, true when it names every update's
 //     new version (a version counts only on its own, not inside a longer one), `versionsUnnamed`,
-//     the `name@version` of each update it does not name, `manifestReviewed`, when `parsed` is false: whether it carries the current
-//     `manifestReviewMarker` (null otherwise), and `current`: false for a low-risk verdict that no
-//     longer names the versions, lacks the current manifest marker, or whose PR's checks have
-//     since failed. `ignoredVerdicts`: each marked comment by anyone else, with its author,
-//     association and link, which never counts. `comments`: the other comments people wrote.
+//     the `name@version` of each update it does not name, `manifestReviewed`, when `parsed` is
+//     false: whether it carries the current `manifestReviewMarker` (null otherwise), and
+//     `current`: false for a low-risk verdict that does not name every version, lacks the current
+//     manifest marker, or whose PR's checks have since failed. `ignoredVerdicts`: each marked
+//     comment by anyone else, with its author, association and link, which never counts.
+//     `comments`: the other comments people wrote.
 // `marker` is the closing line a verdict comment carries, with `--label` (default: the repository's
 // name) as the name in it.
 //

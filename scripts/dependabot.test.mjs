@@ -368,13 +368,18 @@ test("versionsUnnamed lists each update a verdict does not name, as name@version
   const full = readVerdict(say("react 19.2.1, vite 8.3.8, vitest 4.0.3 and semver 7.7.4"), group).verdict;
   assert.equal(full.versionsNamed, true);
   assert.deepEqual(full.versionsUnnamed, []);
+  // A removed dependency has no new version to name.
+  const removed = [...group, { name: "gone", from: "1.0.0", to: null, kind: "removed" }];
+  const withRemoved = readVerdict(say("react 19.2.1, vite 8.3.8, vitest 4.0.3 and semver 7.7.4"), removed).verdict;
+  assert.equal(withRemoved.versionsNamed, true);
+  assert.deepEqual(withRemoved.versionsUnnamed, []);
 });
 
 test("a version counts as named only on its own, never inside a longer version", () => {
   const x = [{ name: "x", from: "5.1.0", to: "5.1.1", kind: "patch" }];
   const named = (text) => readVerdict([{ ...OWNER, body: `✅ x ${text} reviewed\n\n\u{1F916} Dependabot PR review by the Widgets routine` }], x).verdict.versionsNamed;
   for (const text of ["5.1.10", "5.1.1.2", "15.1.1", "1.5.1.1"]) assert.equal(named(text), false, text);
-  for (const text of ["5.1.1", "`5.1.1`", "v5.1.1", "5.1.1.", "(5.1.1)", "5.1.0 → 5.1.1,", "x@5.1.1", "5.1.10 and 5.1.1"]) {
+  for (const text of ["5.1.1", "`5.1.1`", "v5.1.1", "5.1.1.", "(5.1.1)", "5.1.0 → 5.1.1,", "x@5.1.1", "5.1.10 and 5.1.1", "5.1.0→5.1.1", "5.1.1→5.2.0"]) {
     assert.equal(named(text), true, text);
   }
 });

@@ -165,10 +165,9 @@ version (step 2), and a summary hides a member the `Review triggers` name. Take 
 list, or one line, after the opening line; the length guidance above is for the prose around them.
 
 On a PR with `parsed: false`, the versions come from the manifests' diff, and the line before
-`marker` is the PR's `manifestReviewMarker`, exactly. It
-records what was reviewed, so the next run, finding the same title and diff, does not review and
-post it again. If the PR changed during the review, run `list --pr <n>` again and review what
-changed before copying its new marker.
+`marker` is the PR's `manifestReviewMarker`, exactly. It records what was reviewed, so the next
+run, finding the same title and diff, does not review and post it again. If the PR changed during
+the review, run `list --pr <n>` again and review what changed before copying its new marker.
 
 ## 7. Post the verdicts
 
