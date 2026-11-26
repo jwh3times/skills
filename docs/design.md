@@ -1080,9 +1080,10 @@ waves, each a PR here or a refresh of the consumers:
   read them, so the same skill hashes differently from a Windows clone (CRLF) and a Fedora one (LF);
   the check accepts either. On `main` before this wave, unedited skills' hashes matched that way, VA's
   two grill shims aside, and edited skills' did not, except most of HV's, whose lock had been
-  re-hashed after its edits. This repository doesn't run the check: its lock's source is `.`, and its
-  hashes go stale on a refresh by design. CLI 1.8.0 writes a version 2 lock whose hash ignores line
-  endings (see Verified); the check reads both versions, so an install needs no pinned CLI version.
+  re-hashed after its edits. This repository doesn't run the check: its own skills are locked with
+  source `.`, and their hashes go stale on a refresh by design. CLI 1.8.0 writes a version 2 lock
+  whose hash ignores line endings (see Verified); the check reads both versions, so an install needs
+  no pinned CLI version.
 
   Each consumer's refresh, beyond taking the skills, `sync-agents.mjs` and `check-skills.mjs`:
 
