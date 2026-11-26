@@ -33,6 +33,10 @@ configured, or installed.
 - This repository installs its own skills: `.agents/skills/` holds copies of `skills/`, and
   `.claude/skills/` mirrors those. Edit only `skills/`; `npm run build` refreshes both. Its own
   settings are in `docs/agents/`.
+- It also installs the `mattpocock/skills` snapshot its consumers do, so the flow's routes
+  (`/diagnosing-bugs`, `/triage`, `/implement`) work here too. They are never edited here. Moving
+  the snapshot is the `mattpocock/skills` command in `settings/agents-md.md`'s `shared-skills`
+  block, run here as well, then `npm run build`.
 - `scripts/sync-agents.mjs`, `lint-agent-neutrality.mjs`, `sync-main.mjs`, `next-version.mjs`,
   `check-changelog.mjs`, `stamp-changelog.mjs`, `check-docs.mjs`, `check-skills.mjs` and
   `guard.mjs` are the canonical copies of the scripts the consumer repositories carry, each with

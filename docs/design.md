@@ -111,7 +111,10 @@ else: `npx skills@1.7.4 add ./ -s <name> -a codex --copy -y` copies `skills/<nam
 `.agents/skills/<name>` and locks it with source `.`. After that, `npm run build` refreshes those
 copies (`scripts/self-install.mjs`) and the `.claude/skills/` mirror, and `npm run check` fails when
 either drifts. The lock's `computedHash` goes stale on a refresh; nothing reads it, since `update`
-is never run and this repository does not run `check-skills.mjs` (Wave 5).
+is never run and this repository does not run `check-skills.mjs` (Wave 5). It installs the
+consumers' `mattpocock/skills` snapshot too (2026-11-26), by the `shared-skills` block's command,
+so `what-next`'s routes work here; that install upgraded the lock to version 2, which left the
+local entries' hashes empty.
 
 ## Settings catalog
 
