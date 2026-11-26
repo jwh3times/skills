@@ -26,6 +26,9 @@
 - `settings/*.md` — the settings catalog that installs with each skill. **When:** a setting is added,
   renamed or removed, or a default changes.
 - `skills/*/settings/*.md` — copies of `settings/` that `npm run build` generates. `frozen`.
+- `.agents/skills/*/**` — installed skills, mirrored to `.claude/skills/`: copies of `skills/`,
+  which `npm run build` refreshes, and the `mattpocock/skills` snapshot. `frozen`: edit `skills/`,
+  and the snapshot only by moving its pin.
 - `docs/agents/*.md` — this repository's own settings. **When:** a setting changes.
 - `CLAUDE.md` — `@AGENTS.md` only. **When:** never for operating context.
 - `README.md` — what is published, how to install it, and the scripts a repository copies. **When:**

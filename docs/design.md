@@ -111,7 +111,10 @@ else: `npx skills@1.7.4 add ./ -s <name> -a codex --copy -y` copies `skills/<nam
 `.agents/skills/<name>` and locks it with source `.`. After that, `npm run build` refreshes those
 copies (`scripts/self-install.mjs`) and the `.claude/skills/` mirror, and `npm run check` fails when
 either drifts. The lock's `computedHash` goes stale on a refresh; nothing reads it, since `update`
-is never run and this repository does not run `check-skills.mjs` (Wave 5).
+is never run and this repository does not run `check-skills.mjs` (Wave 5). It installs the
+consumers' `mattpocock/skills` snapshot too (2026-11-26), by the `shared-skills` block's command,
+so `what-next`'s routes work here; that install upgraded the lock to version 2, which left the
+local entries' hashes empty.
 
 ## Settings catalog
 
@@ -1077,9 +1080,10 @@ waves, each a PR here or a refresh of the consumers:
   read them, so the same skill hashes differently from a Windows clone (CRLF) and a Fedora one (LF);
   the check accepts either. On `main` before this wave, unedited skills' hashes matched that way, VA's
   two grill shims aside, and edited skills' did not, except most of HV's, whose lock had been
-  re-hashed after its edits. This repository doesn't run the check: its lock's source is `.`, and its
-  hashes go stale on a refresh by design. CLI 1.8.0 writes a version 2 lock whose hash ignores line
-  endings (see Verified); the check reads both versions, so an install needs no pinned CLI version.
+  re-hashed after its edits. This repository doesn't run the check: its own skills are locked with
+  source `.`, and their hashes go stale on a refresh by design. CLI 1.8.0 writes a version 2 lock
+  whose hash ignores line endings (see Verified); the check reads both versions, so an install needs
+  no pinned CLI version.
 
   Each consumer's refresh, beyond taking the skills, `sync-agents.mjs` and `check-skills.mjs`:
 
