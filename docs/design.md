@@ -362,7 +362,12 @@ As built (2026-11-23, Decision 13): `settings/guard.md` holds `Deny commands`, `
 `Protected paths`, each `none` or regex bullets with a reason, defaulting to none. No skill reads
 it, so no first run proposes it, as with `AGENTS.md blocks`; `ship` installs the definition so it
 reaches every repository. Each repository's file is written from its `Dev stack` **Never run**
-commands and its `Never-remove paths` (both in `workspace.md`).
+commands and its `Never-remove paths` (both in `workspace.md`). `Git wrappers` (2026-11-26,
+skills#92) lists the command prefixes that run Git with the words after them: causet routes
+source control through `cst`, which runs Git as `cst git <arguments>` and for every first word it
+does not answer itself, so the universal git rules missed `cst reset --hard` and
+`cst git push --force`. Listed as a setting rather than built in, so the shared script names no
+consumer's tool; repository rules still match the command as written.
 
 ### `docs/agents/handoffs.md` — repo part of handoff/lets-go
 
