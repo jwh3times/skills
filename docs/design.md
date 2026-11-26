@@ -652,6 +652,12 @@ per-project install and the shared scripts are recorded under Architecture.
       `main`, a rerun), so a stale "safe to merge" is neither skipped in triage nor offered for
       landing: the PR is reviewed again and the new verdict replaces it. A needs-effort verdict
       stays current.
+    - **Every verdict names every update** (2026-11-26, #125). LB #824's grouped verdict named
+      four of eleven updates and summed up the rest, so it was stale the moment it landed, and the
+      summary hid a `vitest` bump LB's `Review triggers` always review. Step 6 now asks for each
+      update's from → to in every verdict, the length guidance applying to the prose around them;
+      `verdict.versionsUnnamed` lists what a verdict misses, for step 2's stale report. A version
+      now counts as named only on its own: `5.1.1` inside `5.1.10` or `15.1.1` used to count.
     - **A PR counts as parsed only when every update was read** (2026-11-24, #108, #109).
       `parsed` used to be true with updates missing: GitHub cuts a body off at 65,536
       characters, which dropped a large group's later `Updates` lines, and NuGet's `Pinned <name>

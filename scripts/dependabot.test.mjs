@@ -282,6 +282,7 @@ test("the latest marked comment is the verdict, and it counts for the versions i
     url: "u2",
     createdAt: "2026-11-03T00:00:00Z",
     versionsNamed: true,
+    versionsUnnamed: [],
     manifestReviewed: null,
   });
   assert.deepEqual(others.map((comment) => comment.body), ["hold this until the release"]);
@@ -353,6 +354,29 @@ test("a verdict must name a pinned update's current version", () => {
   assert.equal(readVerdict(comments, parseUpdates(PINNED_TITLE, PINNED_NUGET)).verdict.versionsNamed, true);
   const retargeted = parseUpdates(PINNED_TITLE, PINNED_NUGET.replace("12.30.2", "13.0.0"));
   assert.equal(readVerdict(comments, retargeted).verdict.versionsNamed, false);
+  assert.deepEqual(readVerdict(comments, retargeted).verdict.versionsUnnamed, ["Azure.Storage.Blobs@13.0.0"]);
+});
+
+// LeaseBook #824: a grouped verdict that sums members up ("and seven patches") never names them,
+// so it is stale as it lands, and `versionsUnnamed` says which ones (skills#125).
+test("versionsUnnamed lists each update a verdict does not name, as name@version", () => {
+  const group = [["react", "19.2.1"], ["vite", "8.3.8"], ["vitest", "4.0.3"], ["semver", "7.7.4"]].map(([name, to]) => ({ name, from: null, to, kind: "patch" }));
+  const say = (text) => [{ ...OWNER, body: `✅ **VERIFIED LOW-RISK** ${text}\n\n\u{1F916} Dependabot PR review by the Widgets routine` }];
+  const summed = readVerdict(say("react 19.2.1 and vite 8.3.8, and two patches"), group).verdict;
+  assert.equal(summed.versionsNamed, false);
+  assert.deepEqual(summed.versionsUnnamed, ["vitest@4.0.3", "semver@7.7.4"]);
+  const full = readVerdict(say("react 19.2.1, vite 8.3.8, vitest 4.0.3 and semver 7.7.4"), group).verdict;
+  assert.equal(full.versionsNamed, true);
+  assert.deepEqual(full.versionsUnnamed, []);
+});
+
+test("a version counts as named only on its own, never inside a longer version", () => {
+  const x = [{ name: "x", from: "5.1.0", to: "5.1.1", kind: "patch" }];
+  const named = (text) => readVerdict([{ ...OWNER, body: `✅ x ${text} reviewed\n\n\u{1F916} Dependabot PR review by the Widgets routine` }], x).verdict.versionsNamed;
+  for (const text of ["5.1.10", "5.1.1.2", "15.1.1", "1.5.1.1"]) assert.equal(named(text), false, text);
+  for (const text of ["5.1.1", "`5.1.1`", "v5.1.1", "5.1.1.", "(5.1.1)", "5.1.0 → 5.1.1,", "x@5.1.1", "5.1.10 and 5.1.1"]) {
+    assert.equal(named(text), true, text);
+  }
 });
 
 test("a low-risk verdict stays current only while it names the versions and the checks have not failed", () => {
