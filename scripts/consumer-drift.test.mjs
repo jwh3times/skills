@@ -132,10 +132,18 @@ test("a lock off the pinned snapshot, or no lock, is one snapshot item", () => {
   ]);
 });
 
-function fakeFetch(routes, seen = []) {
+// Serves the repository itself with `repoStatus`, and each path under `contents/` from `routes`
+// (a body, or a status number); any other path is a 404.
+function fakeFetch(routes, { seen = [], repoStatus = 200 } = {}) {
   return async (url, { headers }) => {
     seen.push({ url, headers });
-    const rel = new URL(url).pathname.replace(/^\/repos\/[^/]+\/[^/]+\/contents\//, "");
+    const { pathname } = new URL(url);
+    if (/^\/repos\/[^/]+\/[^/]+$/.test(pathname)) {
+      return repoStatus === 200
+        ? { status: 200, ok: true, json: async () => ({ full_name: pathname.slice("/repos/".length) }) }
+        : { status: repoStatus, ok: false };
+    }
+    const rel = pathname.replace(/^\/repos\/[^/]+\/[^/]+\/contents\//, "");
     const body = routes[rel];
     if (body === undefined) return { status: 404, ok: false };
     if (typeof body === "number") return { status: body, ok: false };
@@ -162,7 +170,7 @@ test("fetchConsumer keeps folder trees, file blobs and the raw lock from main", 
       ],
       "skills-lock.json": '{"version":2,"skills":{}}',
     },
-    seen,
+    { seen },
   );
   const consumer = await fetchConsumer("o/r", { token: "tok", fetchImpl });
   assert.deepEqual(consumer, {
@@ -170,15 +178,28 @@ test("fetchConsumer keeps folder trees, file blobs and the raw lock from main", 
     scripts: { "check-skills.mjs": "b1" },
     lock: { version: 2, skills: {} },
   });
-  assert.ok(seen.every(({ url }) => url.endsWith("?ref=main")));
+  const contents = seen.filter(({ url }) => url.includes("/contents/"));
+  assert.equal(contents.length, 3);
+  assert.ok(contents.every(({ url }) => url.endsWith("?ref=main")));
   assert.ok(seen.every(({ headers }) => headers.Authorization === "Bearer tok"));
   assert.match(seen.find(({ url }) => url.includes("skills-lock.json")).headers.Accept, /raw/);
 });
 
-test("fetchConsumer treats a 404 as absent and any other failure as an error", async () => {
+test("fetchConsumer treats a 404 on a path in a readable repository as absent, and any other failure as an error", async () => {
   const empty = await fetchConsumer("o/r", { fetchImpl: fakeFetch({}) });
   assert.deepEqual(empty, { skills: {}, scripts: {}, lock: null });
   await assert.rejects(fetchConsumer("o/r", { fetchImpl: fakeFetch({ scripts: 403 }) }), /HTTP 403/);
+  await assert.rejects(
+    fetchConsumer("o/r", { fetchImpl: fakeFetch({}, { repoStatus: 403 }) }),
+    { message: "GET o/r: HTTP 403" },
+  );
+});
+
+test("fetchConsumer reports a 404 on the repository itself as unreadable, not as missing everything", async () => {
+  await assert.rejects(
+    fetchConsumer("o/gone", { fetchImpl: fakeFetch({}, { repoStatus: 404 }) }),
+    { message: "GET o/gone: repository not found or not readable (HTTP 404)" },
+  );
 });
 
 test("checkConsumers reports each consumer, keeps going past a failure, and lists sync targets", async () => {
@@ -233,6 +254,16 @@ test("the report has a row per consumer behind, the failures, and who is current
   assert.match(markdown, /\| o\/b \| `check-docs.mjs` \(missing\) \| by hand \|/);
   assert.match(markdown, /- o\/d: GET o\/d\/scripts: HTTP 500/);
   assert.match(markdown, /Current: o\/c\./);
+});
+
+test("the by-hand steps run consumer-sync.mjs in the consumer's checkout, then open-pr", () => {
+  const markdown = renderMarkdown({
+    head: "f00ba47",
+    results: [{ repo: "o/b", sync: false, items: [{ kind: "skill", name: "ship", state: "missing" }] }],
+  });
+  const byHand = markdown.slice(markdown.indexOf("By hand:")).replace(/\s+/g, " ");
+  assert.match(byHand, /`node scripts\/consumer-sync\.mjs <consumer-checkout>`/);
+  assert.match(byHand, /`open-pr`/);
 });
 
 test("versionDate finds the upstream commit whose copy a consumer still has", () => {
