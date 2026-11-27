@@ -19,15 +19,16 @@ every consumer carries, which `sync-agents.mjs` registers as a hook. `test-prove
 and hopover (hopover#1) joined 2026-11-24, bootstrapped on TirelessInvest's layout and already on
 `stamp-on-tag`, so both take sync pull requests from the start. RaceEngineerOverlays
 (RaceEngineerOverlays#3) joined 2026-11-25, bootstrapped on speed-of-light's layout the same way.
+`tldr` written 2026-11-26 (Decision 16), with no settings topic, and joined the shared install
+command, which each consumer takes at its next refresh.
 
 ## Goal
 
 Publish the skills the user wrote — `ship`, `land`, `dependabot`, `end-session`, `handoff`,
-`lets-go`, `docs-updater`, `what-next`, `test-prover`, `ci-triage` and `records-audit` — from this
-one repository, installable into any
-repository. Installing adapts a skill to its repository, but **by writing settings, not by editing
-the skill**: the skill body stays identical everywhere so fixes flow to every repository by
-re-running the install (see Install and update).
+`lets-go`, `docs-updater`, `what-next`, `test-prover`, `ci-triage`, `records-audit` and `tldr` —
+from this one repository, installable into any repository. Installing adapts a skill to its
+repository, but **by writing settings, not by editing the skill**: the skill body stays identical
+everywhere so fixes flow to every repository by re-running the install (see Install and update).
 
 ## Why not edit the skill per repo
 
@@ -124,7 +125,7 @@ PG PressGolf, VA valleys-at-ashebrook-hoa; TI TirelessInvest joined after this s
 column in it. Kind: **value** (command, path, name), **toggle** (a shared
 step on or off), **step** (selects one of several implementations), **hook** (repo-only steps).
 
-### `docs/agents/workspace.md` — new; read by every skill but `land`, `dependabot`, `what-next`, `test-prover` and `ci-triage`
+### `docs/agents/workspace.md` — new; read by every skill but `land`, `dependabot`, `what-next`, `test-prover`, `ci-triage` and `tldr`
 
 | Setting | Found | Kind |
 | --- | --- | --- |
@@ -832,6 +833,25 @@ per-project install and the shared scripts are recorded under Architecture.
       and moves `docs/agents/ship.md` to `docs/agents/open-pr.md` unless the new file exists. A
       consumer's own prose that names `/ship` or `docs/agents/ship.md` outside the shared blocks is
       fixed in its sync PR.
+16. **`tldr`: a ten-line catch-up, read-only** (settled 2026-11-26, #126). The long reports
+    (`open-pr`, `land`, `end-session`) stay as they are; `tldr` is a separate lens the user or the
+    model reaches for ("tl;dr", "catch me up", "where are we"), in three parts: **Done** with each
+    outcome's why, **You** for what waits on the user, **Next** for the one pending step.
+    - **Inline, with no settings.** A forked subagent cannot see the conversation it would
+      summarize, and the skill needs no fact about its repository.
+    - **The conversation, then a few live reads.** It summarizes from context, a compaction
+      summary included and marked as such, and never reads transcript files, which are
+      harness-specific. At most five read-only calls (`git status` and `git branch -vv`, one
+      GraphQL query per repository or REST where a cloud session refuses GraphQL, the harness's
+      task list) confirm what is still open, so a PR merged since is not reported as waiting; a
+      read it cannot make is named, never guessed.
+    - **Scope: the current stretch.** The piece of work the recent messages serve, back to the
+      request that started it, so "merge it" is summarized with the fix it carries; `session`
+      widens it and any other argument narrows it to a topic. **You** always covers the whole
+      session, since what the user owes outlives the stretch it came from, and anything that
+      failed or was skipped gets its own **Done** line.
+    - **It never acts.** No writes, no tracker scan: with nothing pending, **Next** names
+      `/what-next` and leaves running it to the user.
 
 ## Convergence
 
@@ -1258,6 +1278,15 @@ it at 32,041 bytes, but only 727 bytes from the cap.
   leaves the folder and the lock entry.
 - **`remove <name> -y` works:** it deletes the folder from `.agents/skills/` and `.claude/skills/`
   and drops the lock entry, leaving the other skill alone.
+
+`skills` 1.7.4 and 1.9.0, Windows, 2026-11-26 (Decision 16): each ran `add ./ -s tldr -a codex
+--copy -y` against a scratch copy of this repository's version 2 lock.
+
+- **1.7.4 still adds a local skill to a version 2 lock.** The lock stays version 2, and every other
+  entry is left as it was, the empty hashes of the local entries included. The new entry has a
+  hash by 1.7.4's own rule and no `installMode`, like the other local entries. 1.9.0 adds the same
+  entry with a version 2 hash and `installMode: "copy"`. Nothing reads a local entry's hash, so
+  the self-install command keeps naming 1.7.4.
 
 ## Found while surveying (fix in the source repos)
 
