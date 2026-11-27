@@ -7,8 +7,8 @@ identical in every repository; what is specific to a repository lives in that re
 | Skill | Does |
 | --- | --- |
 | `end-session` | Closes out a session: memory, issues and the board, human follow-ups, docs, workspace. |
-| `handoff` | Hands the session to another machine through the Handoffs folder, then runs `end-session`. |
-| `lets-go` | Resumes the active handoff on the other machine. Needs `handoff` installed beside it. |
+| `handoff` | Hands the session to the next one, on either machine, through the Handoffs folder, then runs `end-session`. |
+| `lets-go` | Resumes the active handoff, on whichever machine runs it. Needs `handoff` installed beside it. |
 | `open-pr` | Takes a finished branch to an open PR: release level, docs, changelog, human follow-ups, fast checks. |
 | `land` | Merges a PR the user names: catches it up, waits for its checks on the current head, explains a blocked merge, then confirms the release tag, the deploys, and the closed issues' board status. Needs `end-session` and `ci-triage` installed beside it. |
 | `dependabot` | Reviews the open Dependabot PRs: reads CI first, reproduces the lockfile install, reads the release notes of every major, and posts an evidence-based verdict; then, on the user's word, pushes a known fix and hands the PRs the user names to `land`. Never merges on its own. Needs `land` and `ci-triage` installed beside it. |

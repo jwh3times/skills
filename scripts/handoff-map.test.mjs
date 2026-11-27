@@ -19,6 +19,7 @@ import {
   formatTimestamp,
   parseArgs,
   parseConfig,
+  parseWrittenBy,
   pickName,
   proposeConfig,
   readConfig,
@@ -251,6 +252,82 @@ test("config --write writes the file, which then configures the machine", (conte
   assert.match(readFileSync(env.HANDOFFS_CONFIG, "utf8"), /^HANDOFFS_TRANSPORT=folder$/mu);
 });
 
+test("the machine label is reported, and a missing one leaves the machine configured", () => {
+  const read = () => "HANDOFFS_TRANSPORT=folder\nHANDOFFS_DIR=/d\nHANDOFFS_MACHINE=fedora\n";
+  assert.equal(readConfig({ env: {}, home: "/h", read }).machine, "fedora");
+  assert.equal(
+    readConfig({ env: { HANDOFFS_MACHINE: "windows-desk" }, home: "/h", read }).machine,
+    "windows-desk",
+  );
+
+  const unlabelled = {
+    env: { HANDOFFS_TRANSPORT: "folder", HANDOFFS_DIR: "/d" },
+    read: () => null,
+  };
+  const shown = exec(["config"], { ...unlabelled, home: "/h", hostname: () => "DESKTOP-7Q2.lan" });
+  assert.equal(shown.configured, true);
+  assert.equal(shown.machine, null);
+  assert.equal(shown.machineProposal, "desktop-7q2-lan");
+  assert.equal(shown.proposal, null);
+
+  const labelled = exec(["config"], {
+    env: { ...unlabelled.env, HANDOFFS_MACHINE: "fedora" },
+    read: () => null,
+    home: "/h",
+    hostname: () => "box",
+  });
+  assert.equal(labelled.machineProposal, null);
+
+  const invalid = readConfig({
+    env: { ...unlabelled.env, HANDOFFS_MACHINE: "Two Words" },
+    home: "/h",
+    read: () => null,
+  });
+  assert.equal(invalid.configured, true);
+  assert.equal(invalid.machine, null);
+  assert.match(invalid.machineProblem, /HANDOFFS_MACHINE must be a lowercase slug/u);
+});
+
+test("config --write --machine adds the label and keeps the rest of the config", (context) => {
+  const home = tempDir(context, "home");
+  const env = { HANDOFFS_CONFIG: path.join(home, "config") };
+  const deps = {
+    env,
+    home,
+    read: (file) => (existsSync(file) ? readFileSync(file, "utf8") : null),
+    hostname: () => "box",
+  };
+  exec(["config", "--write", "--transport", "folder", "--dir", path.join(home, "H")], deps);
+  assert.equal(exec(["config"], deps).machine, null);
+
+  const labelled = exec(["config", "--write", "--machine", "fedora"], deps);
+  assert.equal(labelled.machine, "fedora");
+  assert.equal(labelled.transport, "folder");
+  assert.equal(labelled.dir, path.join(home, "H"));
+  assert.match(readFileSync(env.HANDOFFS_CONFIG, "utf8"), /^HANDOFFS_MACHINE=fedora$/mu);
+
+  const moved = exec(["config", "--write", "--dir", path.join(home, "Elsewhere")], deps);
+  assert.equal(moved.machine, "fedora");
+
+  assert.throws(
+    () => exec(["config", "--write", "--machine", "Fedora Box"], deps),
+    /--machine takes a lowercase slug/u,
+  );
+  assert.equal(exec(["config"], deps).machine, "fedora");
+});
+
+test("the Written on line names the machine that wrote a document", () => {
+  const doc = (line) => `# skills handoff\n\n## Where you are\n\n${line}\n- **Branch:** main\n`;
+  assert.equal(parseWrittenBy(doc("- **Written on:** `fedora`")), "fedora");
+  assert.equal(parseWrittenBy(doc("- **Written on:** `windows-desk`")), "windows-desk");
+  assert.equal(parseWrittenBy(doc("Written on: fedora")), "fedora");
+  assert.equal(parseWrittenBy(doc("**Written on**: `fedora`")), "fedora");
+  assert.equal(parseWrittenBy(doc("- **Written on:** `fedora`\r")), "fedora");
+  assert.equal(parseWrittenBy(doc("- **Branch:** feat/x")), null);
+  assert.equal(parseWrittenBy(doc("- **Written on:** `Fedora Box`")), null);
+  assert.equal(parseWrittenBy("Next step: say what it was written on: fedora"), null);
+});
+
 test("an unconfigured machine is refused with the way to configure it", () => {
   assert.throws(
     () => exec(["get", "--key", "x"], { env: {}, home: "/h", read: () => null }),
@@ -296,6 +373,43 @@ test("folder transport: set, get and clear round-trip; the map is never created"
   assert.throws(() => exec(["get", "--key", "x"], deps), /never creates one/u);
 });
 
+test("name gives the Written on line, and set and get read it back", (context) => {
+  const { dir, deps } = folderSetup(context);
+  const here = { ...deps, env: { ...deps.env, HANDOFFS_MACHINE: "fedora" } };
+  const elsewhere = { ...deps, env: { ...deps.env, HANDOFFS_MACHINE: "windows-desk" } };
+
+  const name = exec(["name", "--key", "skills"], here);
+  assert.equal(name.machine, "fedora");
+  assert.equal(name.writtenOn, "- **Written on:** `fedora`");
+  writeFileSync(name.path, `# handoff\n\n## Where you are\n\n${name.writtenOn}\n`);
+
+  const set = exec(["set", name.file, "--key", "skills"], here);
+  assert.equal(set.writtenBy, "fedora");
+  assert.equal(set.machine, "fedora");
+  // The map keeps its shape: the entry is the file name, so an older script reads it unchanged.
+  assert.equal(readMapFile(dir).Active_Handoffs.skills, name.file);
+  const sameMachine = exec(["get", "--key", "skills"], here);
+  assert.equal(sameMachine.writtenBy, "fedora");
+  assert.equal(sameMachine.machine, "fedora");
+  assert.equal(sameMachine.writtenHere, true);
+  assert.equal(exec(["get", "--key", "skills"], elsewhere).writtenHere, false);
+
+  const unlabelled = exec(["get", "--key", "skills"], deps);
+  assert.equal(unlabelled.machine, null);
+  assert.equal(unlabelled.writtenHere, null);
+  assert.equal(exec(["name", "--key", "skills"], deps).writtenOn, null);
+
+  writeFileSync(path.join(dir, "old.md"), "# handoff from before the label\n");
+  exec(["set", "old.md", "--key", "skills"], here);
+  const old = exec(["get", "--key", "skills"], here);
+  assert.equal(old.writtenBy, null);
+  assert.equal(old.writtenHere, null);
+
+  const none = exec(["get", "--key", "ApexRacers"], here);
+  assert.equal(none.writtenBy, null);
+  assert.equal(none.writtenHere, null);
+});
+
 test("folder transport: CRLF maps stay CRLF and conflict copies are reported", (context) => {
   const { dir, deps } = folderSetup(context);
   writeFileSync(
@@ -337,13 +451,15 @@ test("proton-cli: get fetches a document the mirror lacks, and says when the clo
     ...sampleMap(),
     Active_Handoffs: { skills: "skills-handoff-2026-10-25.md", other: "missing.md" },
   });
-  writeFileSync(path.join(cloud, "skills-handoff-2026-10-25.md"), "# from the other machine\n");
+  const fromCloud = "# from the other machine\n\n- **Written on:** `windows-desk`\n";
+  writeFileSync(path.join(cloud, "skills-handoff-2026-10-25.md"), fromCloud);
 
   const got = exec(["get", "--key", "skills"], deps);
   assert.equal(got.exists, true);
+  assert.equal(got.writtenBy, "windows-desk");
   assert.equal(
     readFileSync(path.join(mirror, "skills-handoff-2026-10-25.md"), "utf8"),
-    "# from the other machine\n",
+    fromCloud,
   );
 
   const absent = exec(["get", "--key", "other"], deps);

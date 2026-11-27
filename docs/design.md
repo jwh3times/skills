@@ -182,6 +182,8 @@ That change (#47) reached every consumer the same day: apexracers#521, caitlyn-h
 causet#444 (`cst merge --compact`), GuardianTracker#498, holland-vip#243, LeaseBook#769,
 magic-agenda#661, Nearcited#318, PressGolf#328, TirelessInvest#45 and
 valleys-at-ashebrook-hoa#579. No settings changed, since every consumer already had `Map key`.
+Since #49 (2026-11-27) it routes every active handoff to `/lets-go` whichever machine wrote it, and
+names that machine from the document's "Written on" line (see the machine config catalog).
 Between the two rollouts, causet and TI changed release schemes (see Decision 8), so both needed a
 changelog section the first rollout did not.
 
@@ -397,7 +399,8 @@ six repos and at `scripts/` in four, with four command sets (`get/set/clear`, `w
 
 - The machine config is `~/.config/handoffs/config` with `HANDOFFS_TRANSPORT` (`folder` when a sync
   client or nothing moves the folder, `proton-cli` for the CLI mirror), `HANDOFFS_DIR` and, for
-  `proton-cli`, `HANDOFFS_REMOTE`. An environment variable of the same name overrides a line.
+  `proton-cli`, `HANDOFFS_REMOTE`; since #49, also `HANDOFFS_MACHINE` (the machine label, below).
+  An environment variable of the same name overrides a line.
   `handoff-map.mjs config` proposes it from what it finds (a synced Proton folder, VA's discovery;
   else the CLI and an exported `HANDOFFS_DIR`), and `config --write` writes it once the user
   confirms.
@@ -410,6 +413,26 @@ six repos and at `scripts/` in four, with four command sets (`get/set/clear`, `w
 - Its tests live in `scripts/handoff-map.test.mjs`, with a fake `proton-drive` whose cloud folder is
   a directory, so the test file does not install into consumers.
 - `lets-go` uses the copy in `.agents/skills/handoff/`, so it needs `handoff` installed beside it.
+
+**A handoff resumes on either machine** (settled 2026-11-27, #49). A handoff parks a session's work
+for the next session: it moves the work to the other machine, or closes a session so a fresh one
+can start on the same machine. So the machine that wrote a handoff never gates it: `what-next`
+routes every active handoff to `/lets-go`, and `lets-go` claims it without asking.
+
+**Machine label** — the short lowercase slug the user picks for a machine (`fedora`,
+`windows-desk`), `HANDOFFS_MACHINE` in the machine config. It only informs:
+
+- `handoff` writes it into each document's **Where you are** as "Written on", from the line
+  `handoff-map.mjs name` returns (`writtenOn`), and asks for the label on its first run, proposed
+  from the hostname (`config --write --machine`).
+- `get` and `set` read it back as `writtenBy`, and `get` adds `writtenHere`. `what-next` names it on
+  the handoff's line. `lets-go` names it in its briefing and uses it to say where unpushed work is:
+  in this machine's branches and worktrees, or still to be pushed from `<label>`.
+- A machine without a label is still `configured`, and a document without the line (written before
+  #49, or on an unlabelled machine) shows no label. `what-next` and `lets-go` never ask for it.
+- It lives in the document, not the map: the map is shared by every repository and both machines,
+  and an entry that changed from a file name to an object would break a machine still on the older
+  `handoff-map.mjs`.
 
 ## Fixed in the skill body, not settings
 
