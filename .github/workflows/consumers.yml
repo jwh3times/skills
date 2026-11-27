@@ -4,8 +4,9 @@ name: Consumers
 #
 # The drift job runs `scripts/consumer-drift.mjs`, which reads each consumer's main through the API
 # and compares its shared skills, canonical scripts and snapshot pin with this checkout. It keeps
-# one open issue labelled `consumer-drift` holding the report, and closes it once every consumer is
-# current. The consumers are public, so `GITHUB_TOKEN` reads them.
+# one open issue labelled `consumer-drift` holding the report, and closes it once every consumer was
+# read and is current: one it could not read keeps the issue open. The consumers are public, so
+# `GITHUB_TOKEN` reads them.
 #
 # The sync job then updates each behind consumer marked `sync: true`: it runs
 # `scripts/consumer-sync.mjs` in a checkout of that consumer's main and pushes the result to the

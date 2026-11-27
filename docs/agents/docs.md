@@ -31,6 +31,10 @@
   which `npm run build` refreshes, and the `mattpocock/skills` snapshot. `frozen`: edit `skills/`,
   and the snapshot only by moving its pin.
 - `docs/agents/*.md` — this repository's own settings. **When:** a setting changes.
+- `consumers.json`, `.github/workflows/consumers.yml` — the consumer list (`sync: true` marks a
+  consumer that takes sync pull requests) and the Consumers workflow that reads it. **When:** a
+  consumer is added or removed, or moves to or from `stamp-on-tag`; the workflow changes what it
+  reports, when it closes the `consumer-drift` issue, or how it syncs.
 - `CLAUDE.md` — `@AGENTS.md` only. **When:** never for operating context.
 - `README.md` — what is published, how to install it, and the scripts a repository copies. **When:**
   a skill is added to or removed from `skills/`, an install command changes, or a canonical script is
@@ -40,9 +44,15 @@
 
 - Published skills: `skills/*/SKILL.md`, against the `README.md` table and install command and the
   `docs/design.md` Status line.
-- Scripts: `scripts` in `package.json` and the files in `scripts/`, against `AGENTS.md`, the
-  `README.md` script table, the `shared-skills` block in `settings/agents-md.md`, and the list of
-  shared scripts under Architecture in `docs/design.md`.
+- Canonical scripts: `ALWAYS_SCRIPTS` and `OPTIONAL_SCRIPTS` at the top of
+  `scripts/consumer-drift.mjs`, against `AGENTS.md`, the `README.md` script table, the
+  `shared-skills` block in `settings/agents-md.md`, and the list of shared scripts under
+  Architecture in `docs/design.md`. The scripts that run only here (`build-settings`,
+  `self-install`, `consumer-drift`, `consumer-sync`) are not canonical.
+- Consumers: the repositories in `consumers.json`, against the consumer list in `AGENTS.md` and
+  the Status line of `docs/design.md`. A change to the list that does not touch both is drift. A
+  consumer with `.github/dependabot.yml` is also on the Repositories list in
+  `docs/routines/dependabot-review.md`.
 - The `mattpocock/skills` snapshot: the install command in the `shared-skills` block, against the
   version in that block and the commit and skill count in Wave 5 of `docs/design.md`.
 

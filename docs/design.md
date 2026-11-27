@@ -605,6 +605,11 @@ per-project install and the shared scripts are recorded under Architecture.
       lock's pin for each third-party snapshot. The lock's `commit` field moves on every install,
       so it is never compared. The Consumers workflow runs it after each push to `main` and daily
       and keeps one `consumer-drift` issue current, closing it when none is behind.
+      **Amended 2026-11-27 (#63):** it closes when every consumer was read and none is behind. A
+      consumer it could not read is listed under "Could not read" and keeps the issue open, since
+      closing would hide the failure. A 404 on the repository itself (deleted, or private to the
+      token) is such a failure, where it used to read as a consumer missing everything; a 404 on a
+      path inside a readable repository still means that path is absent.
     - **Sync pull requests, where a bot can open one.** For a consumer marked `sync: true` in
       `consumers.json`, the workflow runs `scripts/consumer-sync.mjs` in a checkout of its `main`
       (the install commands, the carried scripts, then `sync-agents`) and force-pushes a bot-owned

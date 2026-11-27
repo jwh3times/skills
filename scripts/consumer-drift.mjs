@@ -8,7 +8,7 @@
 //   node scripts/consumer-drift.mjs                      # print the report as Markdown
 //   node scripts/consumer-drift.mjs --json <file>        # also write the result as JSON
 //   node scripts/consumer-drift.mjs --markdown <file>    # write the report to a file instead
-//   node scripts/consumer-drift.mjs --check              # exit 1 if any consumer is behind
+//   node scripts/consumer-drift.mjs --check              # exit 1 if any consumer is behind or unreadable
 //
 // The consumers are listed in `consumers.json`; `sync: true` marks one the Consumers workflow keeps
 // current with pull requests (`scripts/consumer-sync.mjs`). Their files are read through the GitHub
@@ -124,16 +124,25 @@ export function versionDate(root, relPath, id, git = runGit) {
   return null;
 }
 
-// Reads a consumer's installed skills, scripts and lock from its main branch.
+// Reads a consumer's installed skills, scripts and lock from its main branch. A 404 on a path means
+// the path is absent; a 404 on the repository itself (deleted, or private to this token) is an
+// error, so an unreadable consumer is not reported as missing everything. A renamed repository
+// answers with a redirect, which fetch follows.
 export async function fetchConsumer(repo, { token, fetchImpl = globalThis.fetch } = {}) {
-  const get = async (rel, raw = false) => {
+  const request = (url, raw = false) => {
     const headers = {
       Accept: raw ? "application/vnd.github.raw+json" : "application/vnd.github+json",
       "User-Agent": "consumer-drift",
       "X-GitHub-Api-Version": "2022-11-28",
     };
     if (token) headers.Authorization = `Bearer ${token}`;
-    const response = await fetchImpl(`https://api.github.com/repos/${repo}/contents/${rel}?ref=main`, { headers });
+    return fetchImpl(url, { headers });
+  };
+  const repository = await request(`https://api.github.com/repos/${repo}`);
+  if (repository.status === 404) throw new Error(`GET ${repo}: repository not found or not readable (HTTP 404)`);
+  if (!repository.ok) throw new Error(`GET ${repo}: HTTP ${repository.status}`);
+  const get = async (rel, raw = false) => {
+    const response = await request(`https://api.github.com/repos/${repo}/contents/${rel}?ref=main`, raw);
     if (response.status === 404) return null;
     if (!response.ok) throw new Error(`GET ${repo}/${rel}: HTTP ${response.status}`);
     return raw ? response.text() : response.json();
@@ -163,7 +172,7 @@ export function renderMarkdown({ head, results }, dateOf = () => null) {
   const lines = [
     `Consumers behind \`${OWN_SOURCE}\` at ${head ? head.slice(0, 7) : "HEAD"}. The Consumers workflow`,
     "rewrites this report after every push to `main` and daily, and closes the issue once every",
-    "consumer is current.",
+    "consumer was read and is current.",
     "",
   ];
   if (behind.length > 0) {
@@ -174,9 +183,10 @@ export function renderMarkdown({ head, results }, dateOf = () => null) {
     }
     lines.push(
       "",
-      "By hand: in the consumer, re-run the install commands in its `AGENTS.md` shared-skills block, copy",
-      "each canonical script it carries (with its test) from `scripts/` here, run",
-      "`node scripts/sync-agents.mjs`, and run `open-pr` on the branch.",
+      "By hand: on a branch of the consumer's checkout, run",
+      "`node scripts/consumer-sync.mjs <consumer-checkout>` from a clone of this repository (it re-runs",
+      "the install commands, copies the canonical scripts and runs `sync-agents.mjs`), then run",
+      "`open-pr` on that branch.",
     );
   }
   if (failed.length > 0) {
