@@ -18,8 +18,8 @@
 - `skills/*/SKILL.md` — each skill's contract with the skills that call it (what one passes in, what
   the other returns or owes). **When:** a skill changes what it takes from or hands to another
   skill.
-- `skills/handoff/machine-config.md` — how the Handoffs folder reaches a machine. **When:** a
-  transport or a key of the machine config changes.
+- `skills/handoff/machine-config.md` — how the Handoffs folder reaches a machine, and its machine
+  label. **When:** a transport, a key or a reader of the machine config changes.
 - `skills/dependabot/resolution.md` — how a review reads each ecosystem's lockfile install (peers,
   pnpm's unmet peers, uv, NuGet, Go). **When:** a resolution signal is found to mislead a verdict, or
   an ecosystem is added.
