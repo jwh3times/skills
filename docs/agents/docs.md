@@ -5,7 +5,8 @@
 - `docs/design.md` — the architecture, settings catalog, Decisions, Verified and Unverified, Pilot
   plan, and Found while surveying. **When:** a decision is settled; a setting is added, renamed or
   removed (`settings/`); a `skills` CLI question is tested; the pilot advances (the Status line and
-  Pilot plan); a consumer-repository problem turns up.
+  Pilot plan); a skill reaches the consumers (the Status line); a consumer-repository
+  problem turns up.
 - `AGENTS.md` — durable rules for working in this repository. **When:** the layout, the build and
   check scripts, or a publishing rule changes; a consumer is added.
 - `docs/consumer-traps.md` — traps that hold across several consumers (setting up a consumer's
