@@ -9,18 +9,22 @@ valleys-at-ashebrook-hoa (#477), 2026-10-27/28: every consumer. On 2026-10-28 ev
 converged on the settings defaults (#16, see Convergence) and took #17. TirelessInvest joined
 2026-11-10 (TirelessInvest#1), after the surveys, already on `skills` 1.8.0 and the version 2 lock
 (TirelessInvest#2). `what-next` written 2026-11-12 (see the `issue-tracker.md` catalog) and
-installed here, joining the shared install command, which each consumer takes at its next refresh.
-`land` written 2026-11-21 (Decision 11, the `merging.md` catalog) and joined the same way.
-`dependabot` written 2026-11-22 (Decision 12, the `dependabot.md` catalog) and joined the same way.
-`scripts/guard.mjs` written 2026-11-23 (Decision 13, the `guard.md` catalog), a canonical script
-every consumer carries, which `sync-agents.mjs` registers as a hook. `test-prover`, `ci-triage` and
-`records-audit` written 2026-11-23 (Decision 14, the `test-proof.md` catalog), with the board's
+installed here, joining the shared install command. `land` written 2026-11-21 (Decision 11, the
+`merging.md` catalog) and joined the same way. `dependabot` written 2026-11-22 (Decision 12, the
+`dependabot.md` catalog) and joined the same way. `scripts/guard.mjs` written 2026-11-23
+(Decision 13, the `guard.md` catalog), a canonical script every consumer carries, which
+`sync-agents.mjs` registers as a hook. `test-prover`, `ci-triage` and `records-audit` written
+2026-11-23 (Decision 14, the `test-proof.md` catalog), with the board's
 `Due` field, and joined the shared install command the same way. speed-of-light (speed-of-light#3)
 and hopover (hopover#1) joined 2026-11-24, bootstrapped on TirelessInvest's layout and already on
 `stamp-on-tag`, so both take sync pull requests from the start. RaceEngineerOverlays
 (RaceEngineerOverlays#3) joined 2026-11-25, bootstrapped on speed-of-light's layout the same way.
 `tldr` written 2026-11-26 (Decision 16), with no settings topic, and joined the shared install
-command, which each consumer takes at its next refresh.
+command, which each consumer takes at its next refresh. By 2026-11-27 every consumer had
+`what-next`, `land`, `dependabot`, `test-prover`, `ci-triage` and `records-audit` (the
+`consumer-drift` report at `e8d3c96`), though every one held an older `what-next` than `main`'s,
+nine an older `dependabot`, and PressGolf an older `test-prover`; `tldr` had reached causet,
+LeaseBook, magic-agenda, RaceEngineerOverlays and speed-of-light.
 
 ## Goal
 
@@ -372,14 +376,14 @@ does not answer itself, so the universal git rules missed `cst reset --hard` and
 `cst git push --force`. Listed as a setting rather than built in, so the shared script names no
 consumer's tool; repository rules still match the command as written.
 
-### `docs/agents/handoffs.md` — repo part of handoff/lets-go
+### `docs/agents/handoffs.md` — repo part of handoff/lets-go/what-next
 
 | Setting | Found |
 | --- | --- |
 | Map key | hand-chosen (`ApexRacers`, `LeaseBook`, `GuardianTracker`); every script guesses it from the remote name, seven different ways. Make it explicit |
 | Extra document content | NC: build-order issue #15, `.dev.vars`/`.env.local`; MA: private repo as commit hash only |
 
-### Machine config — handoff/lets-go
+### Machine config — handoff/lets-go/what-next
 
 | Setting | Found |
 | --- | --- |
