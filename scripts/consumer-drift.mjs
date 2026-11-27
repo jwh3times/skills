@@ -8,7 +8,7 @@
 //   node scripts/consumer-drift.mjs                      # print the report as Markdown
 //   node scripts/consumer-drift.mjs --json <file>        # also write the result as JSON
 //   node scripts/consumer-drift.mjs --markdown <file>    # write the report to a file instead
-//   node scripts/consumer-drift.mjs --check              # exit 1 if any consumer is behind
+//   node scripts/consumer-drift.mjs --check              # exit 1 if any consumer is behind or unreadable
 //
 // The consumers are listed in `consumers.json`; `sync: true` marks one the Consumers workflow keeps
 // current with pull requests (`scripts/consumer-sync.mjs`). Their files are read through the GitHub
