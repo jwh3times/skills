@@ -268,6 +268,7 @@ test("the machine label is reported, and a missing one leaves the machine config
   assert.equal(shown.configured, true);
   assert.equal(shown.machine, null);
   assert.equal(shown.machineProposal, "desktop-7q2-lan");
+  assert.equal(shown.machineProblem, null);
   assert.equal(shown.proposal, null);
 
   const labelled = exec(["config"], {
@@ -326,6 +327,7 @@ test("the Written on line names the machine that wrote a document", () => {
   assert.equal(parseWrittenBy(doc("- **Branch:** feat/x")), null);
   assert.equal(parseWrittenBy(doc("- **Written on:** `Fedora Box`")), null);
   assert.equal(parseWrittenBy("Next step: say what it was written on: fedora"), null);
+  assert.equal(parseWrittenBy("Next step: check it was Written on: fedora"), null);
 });
 
 test("an unconfigured machine is refused with the way to configure it", () => {
