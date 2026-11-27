@@ -17,11 +17,12 @@ identical in every repository; what is specific to a repository lives in that re
 | `test-prover` | Proves a change's new tests in a scratch worktree: each runs on its own and matches a test, goes red with the fix reverted, and catches each changed guard being broken. Runs in a subagent of its own; `open-pr` runs it when a branch adds tests. |
 | `ci-triage` | Reads a red check, read-only: the failing step, the log's first error, the repository's known reds and `main`'s runs, and classes it known red, runner/infra, likely flake, real failure or unknown. Runs in a subagent of its own; `land` and `dependabot` run it. Reads `land`'s `land.mjs` for the required checks when `land` is installed beside it. |
 | `records-audit` | Audits the board, the trackers, the follow-up wiki and the changelog against each other, read-only, and names the fix for each finding; run it weekly. Needs `end-session` installed beside it. |
+| `tldr` | Catches the user up in about ten lines: what the session did and why, what waits on them, and the next step, checked against the live state of its branches, PRs and issues. Read-only. |
 
 ## Install, and later update
 
 ```bash
-npx skills add jwh3times/skills -s end-session -s handoff -s lets-go -s open-pr -s land -s dependabot -s docs-updater -s what-next -s test-prover -s ci-triage -s records-audit -a codex --copy -y
+npx skills add jwh3times/skills -s end-session -s handoff -s lets-go -s open-pr -s land -s dependabot -s docs-updater -s what-next -s test-prover -s ci-triage -s records-audit -s tldr -a codex --copy -y
 node scripts/sync-agents.mjs   # mirror .agents/skills/ into .claude/skills/, write the AGENTS.md blocks
 ```
 

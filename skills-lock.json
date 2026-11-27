@@ -186,6 +186,11 @@
       "sourceType": "local",
       "computedHash": ""
     },
+    "tldr": {
+      "source": ".",
+      "sourceType": "local",
+      "computedHash": "ae192d038cdedab70ddd10433285f0a64c0fa02e50becec75175c886915e3b10"
+    },
     "to-questionnaire": {
       "source": "mattpocock/skills",
       "ref": "d1478fcb140db0b93c0c8df17bcfd311844749d0",
