@@ -104,8 +104,51 @@ test("a skill that names a helper gets a copy, marked as generated after the she
       "#!/usr/bin/env node\n" + boardMarker + "// Board helper.\nexport const x = 1;\n",
     );
     assert.equal(read(root, "skills/end-session/board.mjs"), boardSource);
-    assert.ok(!existsSync(path.join(root, "skills/plain/board.mjs")));
     assert.deepEqual(buildSettings(root, { check: true }).stale, []);
+  });
+});
+
+test("a helper must be <skill>/<file> with a source, and two may not share a copy's path", () => {
+  withHelperFixture((root) => {
+    buildSettings(root);
+    const land = (helpers) =>
+      write(
+        root,
+        "skills/land/SKILL.md",
+        `---\nname: land\ndescription: Land.\nmetadata:\n  helpers: ${helpers}\n---\n`,
+      );
+
+    land("end-session/settings/docs.md");
+    assert.throws(
+      () => buildSettings(root),
+      /skills\/land\/SKILL\.md: helper 'end-session\/settings\/docs\.md' has no skills\/end-session\/settings\/docs\.md/,
+    );
+
+    land("end-session/missing.mjs");
+    assert.throws(
+      () => buildSettings(root),
+      /skills\/land\/SKILL\.md: helper 'end-session\/missing\.mjs' has no skills\/end-session\/missing\.mjs/,
+    );
+
+    write(root, "skills/other/board.mjs", "#!/usr/bin/env node\n// Another board.\n");
+    land("end-session/board.mjs other/board.mjs");
+    assert.throws(
+      () => buildSettings(root),
+      /skills\/land\/SKILL\.md: two helpers would both be copied to skills\/land\/board\.mjs/,
+    );
+  });
+});
+
+test("a skill's own script that quotes the marker below its first line is still its own", () => {
+  withHelperFixture((root) => {
+    const own = `#!/usr/bin/env node\n// plain's own board script.\n${boardMarker}`;
+    write(root, "skills/plain/board.mjs", own);
+    assert.deepEqual(buildSettings(root, { check: true }).stale.filter((s) => s.includes("plain")), []);
+    buildSettings(root);
+    assert.equal(read(root, "skills/plain/board.mjs"), own);
+
+    write(root, "skills/land/board.mjs", own);
+    assert.throws(() => buildSettings(root), /would overwrite skills\/land\/board\.mjs/);
   });
 });
 

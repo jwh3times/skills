@@ -85,8 +85,9 @@ into `skills/<name>/settings/`, so every installed skill carries the definitions
 `--check` fails when a copy drifts from the catalog. The same build copies a helper script one
 skill owns into each skill that names it under `metadata: helpers:` (`end-session/board.mjs`),
 with a generated-file comment after the shebang, so no skill needs another installed beside it to
-run it (2026-11-27, #76). Its check fails on a stale or orphaned copy, and on a `SKILL.md` or
-settings copy that calls a named helper through any folder but its own.
+run it (2026-11-27, #76). Its check fails on a stale, missing or orphaned copy, on a copy that
+would replace a file the build did not write, and on a `SKILL.md` or settings copy that calls a
+named helper through any folder but its own.
 
 **Hooks cover genuinely repo-only steps.** A skill names fixed points ("before fast checks", "after
 sync", "extra cleanup"); a repo settings file may list steps under a hook, which the skill runs at
