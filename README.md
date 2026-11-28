@@ -10,13 +10,13 @@ identical in every repository; what is specific to a repository lives in that re
 | `handoff` | Hands the session to the next one, on either machine, through the Handoffs folder, then runs `end-session`. |
 | `lets-go` | Resumes the active handoff, on whichever machine runs it. Needs `handoff` installed beside it. |
 | `open-pr` | Takes a finished branch to an open PR: release level, docs, changelog, human follow-ups, fast checks. |
-| `land` | Merges a PR the user names: catches it up, waits for its checks on the current head, explains a blocked merge, then confirms the release tag, the deploys, and the closed issues' board status. Needs `end-session` and `ci-triage` installed beside it. |
+| `land` | Merges a PR the user names: catches it up, waits for its checks on the current head, explains a blocked merge, then confirms the release tag, the deploys, and the closed issues' board status. Needs `ci-triage` installed beside it. |
 | `dependabot` | Reviews the open Dependabot PRs: reads CI first, reproduces the lockfile install, reads the release notes of every major, and posts an evidence-based verdict; then, on the user's word, pushes a known fix and hands the PRs the user names to `land`. Never merges on its own. Needs `land` and `ci-triage` installed beside it. |
 | `docs-updater` | Finds where the docs and the code disagree and fixes the docs, or reports it in `check` mode. `open-pr` and `end-session` run it, so install it beside them. |
 | `what-next` | Ranks the open work across the trackers and the board, puts an active handoff and overdue deadlines first, and recommends what to pick up next. Read-only. Needs `handoff` installed beside it. |
 | `test-prover` | Proves a change's new tests in a scratch worktree: each runs on its own and matches a test, goes red with the fix reverted, and catches each changed guard being broken. Runs in a subagent of its own; `open-pr` runs it when a branch adds tests. |
 | `ci-triage` | Reads a red check, read-only: the failing step, the log's first error, the repository's known reds and `main`'s runs, and classes it known red, runner/infra, likely flake, real failure or unknown. Runs in a subagent of its own; `land` and `dependabot` run it. Reads `land`'s `land.mjs` for the required checks when `land` is installed beside it. |
-| `records-audit` | Audits the board, the trackers, the follow-up wiki and the changelog against each other, read-only, and names the fix for each finding; run it weekly. Needs `end-session` installed beside it. |
+| `records-audit` | Audits the board, the trackers, the follow-up wiki and the changelog against each other, read-only, and names the fix for each finding; run it weekly. |
 | `tldr` | Catches the user up in about ten lines: what the session did and why, what waits on them, and the next step, checked against the live state of its branches, PRs and issues. Read-only. |
 
 ## Install, and later update

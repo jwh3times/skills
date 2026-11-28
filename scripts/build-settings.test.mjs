@@ -80,6 +80,136 @@ test("--check reports stale, missing and orphaned copies without writing; a buil
   });
 });
 
+const boardSource = "#!/usr/bin/env node\n// Board helper.\nexport const x = 1;\n";
+const boardMarker =
+  "// Generated from skills/end-session/board.mjs in jwh3times/skills by scripts/build-settings.mjs; edit it there.\n";
+
+function withHelperFixture(fn) {
+  withFixture((root) => {
+    write(root, "skills/end-session/board.mjs", boardSource);
+    write(
+      root,
+      "skills/land/SKILL.md",
+      "---\nname: land\ndescription: Land.\nmetadata:\n  helpers: end-session/board.mjs\n---\n\nRun `node .agents/skills/land/board.mjs set`.\n",
+    );
+    fn(root);
+  });
+}
+
+test("a skill that names a helper gets a copy, marked as generated after the shebang", () => {
+  withHelperFixture((root) => {
+    buildSettings(root);
+    assert.equal(
+      read(root, "skills/land/board.mjs"),
+      "#!/usr/bin/env node\n" + boardMarker + "// Board helper.\nexport const x = 1;\n",
+    );
+    assert.equal(read(root, "skills/end-session/board.mjs"), boardSource);
+    assert.ok(!existsSync(path.join(root, "skills/plain/board.mjs")));
+    assert.deepEqual(buildSettings(root, { check: true }).stale, []);
+  });
+});
+
+test("--check fails on a hand-edited helper copy and on one no skill names any more", () => {
+  withHelperFixture((root) => {
+    buildSettings(root);
+    write(root, "skills/plain/board.mjs", read(root, "skills/land/board.mjs"));
+    write(root, "skills/land/board.mjs", read(root, "skills/land/board.mjs") + "// local fix\n");
+
+    assert.deepEqual(buildSettings(root, { check: true }).stale, [
+      "skills/land/board.mjs",
+      "skills/plain/board.mjs (orphaned)",
+    ]);
+
+    buildSettings(root);
+    assert.deepEqual(buildSettings(root, { check: true }).stale, []);
+    assert.ok(!existsSync(path.join(root, "skills/plain/board.mjs")));
+    assert.equal(read(root, "skills/end-session/board.mjs"), boardSource);
+  });
+});
+
+test("a skill's own script of the same name is never taken for an orphan, and the last copy still is", () => {
+  withHelperFixture((root) => {
+    buildSettings(root);
+    write(root, "skills/plain/board.mjs", "#!/usr/bin/env node\n// plain's own board script.\n");
+    write(
+      root,
+      "skills/land/SKILL.md",
+      "---\nname: land\ndescription: Land.\n---\n\nNo board here.\n",
+    );
+
+    assert.deepEqual(buildSettings(root, { check: true }).stale, ["skills/land/board.mjs (orphaned)"]);
+    buildSettings(root);
+    assert.ok(!existsSync(path.join(root, "skills/land/board.mjs")));
+    assert.ok(existsSync(path.join(root, "skills/plain/board.mjs")));
+  });
+});
+
+test("a copy that would overwrite a file the build did not write is an error", () => {
+  withHelperFixture((root) => {
+    write(root, "skills/land/board.mjs", "#!/usr/bin/env node\n// land's own board script.\n");
+    assert.throws(
+      () => buildSettings(root),
+      /skills\/land\/SKILL\.md: helper 'end-session\/board\.mjs' would overwrite skills\/land\/board\.mjs/,
+    );
+    assert.equal(read(root, "skills/land/board.mjs"), "#!/usr/bin/env node\n// land's own board script.\n");
+  });
+});
+
+test("a skill that calls another skill's copy of a helper is an error", () => {
+  withHelperFixture((root) => {
+    write(
+      root,
+      "skills/land/SKILL.md",
+      "---\nname: land\ndescription: Land.\nmetadata:\n  helpers: end-session/board.mjs\n---\n\nRun `node .agents/skills/end-session/board.mjs set`.\n",
+    );
+    assert.throws(
+      () => buildSettings(root, { check: true }),
+      /skills\/land\/SKILL\.md: calls \.agents\/skills\/end-session\/board\.mjs; call this skill's own copy/,
+    );
+    for (const call of [".claude/skills/end-session/board.mjs", ".agents/skills/<skill>/board.mjs"]) {
+      write(
+        root,
+        "skills/land/SKILL.md",
+        `---\nname: land\ndescription: Land.\nmetadata:\n  helpers: end-session/board.mjs\n---\n\nRun \`node ${call} set\`.\n`,
+      );
+      assert.throws(
+        () => buildSettings(root, { check: true }),
+        /skills\/land\/SKILL\.md: calls .*board\.mjs; call this skill's own copy/,
+        call,
+      );
+    }
+  });
+});
+
+test("--check reports a named helper's copy that is missing", () => {
+  withHelperFixture((root) => {
+    buildSettings(root);
+    rmSync(path.join(root, "skills/land/board.mjs"));
+    assert.deepEqual(buildSettings(root, { check: true }).stale, ["skills/land/board.mjs (missing)"]);
+  });
+});
+
+test("a skill whose body or settings call a helper without naming it is an error", () => {
+  withHelperFixture((root) => {
+    write(
+      root,
+      "settings/docs.md",
+      "# Topic: docs\n\nWrite it with `node .agents/skills/<skill>/board.mjs file`.\n",
+    );
+    // end-session holds the source, so its copy of the topic may call it.
+    assert.doesNotThrow(() => buildSettings(root, { check: true }));
+    write(
+      root,
+      "skills/plain/SKILL.md",
+      "---\nname: plain\ndescription: x\nmetadata:\n  settings: docs\n---\n",
+    );
+    assert.throws(
+      () => buildSettings(root, { check: true }),
+      /skills\/plain\/settings\/docs\.md: calls \.agents\/skills\/<skill>\/board\.mjs, but skills\/plain\/SKILL\.md names no helper end-session\/board\.mjs/,
+    );
+  });
+});
+
 test("a topic missing from the catalog is an error", () => {
   withFixture((root) => {
     write(
