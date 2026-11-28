@@ -82,7 +82,12 @@ config is a shell-style `KEY=value` file.
 **Settings definitions.** This repository keeps one catalog, `settings/<topic>.md`: each setting's
 name, kind, meaning, and how step 0 discovers it. A build script copies the topics a skill reads
 into `skills/<name>/settings/`, so every installed skill carries the definitions it needs; its
-`--check` fails when a copy drifts from the catalog.
+`--check` fails when a copy drifts from the catalog. The same build copies a helper script one
+skill owns into each skill that names it under `metadata: helpers:` (`end-session/board.mjs`),
+with a generated-file comment after the shebang, so no skill needs another installed beside it to
+run it (2026-11-27, #76). Its check fails on a stale, missing or orphaned copy, on a copy that
+would replace a file the build did not write, and on a `SKILL.md` or settings copy that calls a
+named helper through any folder but its own.
 
 **Hooks cover genuinely repo-only steps.** A skill names fixed points ("before fast checks", "after
 sync", "extra cleanup"); a repo settings file may list steps under a hook, which the skill runs at
@@ -637,6 +642,15 @@ per-project install and the shared scripts are recorded under Architecture.
       workflow on, and holland-vip and magic-agenda record that it still misses items, so a skill
       re-reads Status after a close and sets Done when it is not: no setting says which boards are
       automatic.
+      **Amended 2026-11-27 (#76):** calling it by path made `end-session` a hidden prerequisite of
+      every other skill that touched a board, and the shared human-follow-up procedure, which
+      `open-pr` and `docs-updater` run, still wrote the board by hand. The source stays in
+      `end-session`; `npm run build` copies it into `land`, `open-pr`, `docs-updater` and
+      `records-audit` (Settings definitions, above), each calls its own copy, and the procedure's
+      Board step writes through the copy beside it. `records-audit` only reads, but it runs
+      `board.mjs audit`, so it carries one too. Rejected: making `end-session` a stated
+      prerequisite (a hidden install order in every consumer), and leaving the procedure on
+      `gh project` (two of its three writers without the script's protections).
     - **`/land` next.** The user's words name the PR; that covers catching it up, waiting and
       merging, never `--admin`, and no run without a user. Fixed in the body: checks watched by
       the head's full sha, never `--watch` alone; a blocked-but-green PR read in a fixed order (CI

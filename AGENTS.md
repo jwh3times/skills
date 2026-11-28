@@ -53,7 +53,10 @@ configured, or installed.
 - A skill's helper script (`skills/handoff/handoff-map.mjs`, `skills/end-session/board.mjs`,
   `skills/land/land.mjs`, `skills/dependabot/dependabot.mjs`, `skills/test-prover/mutate.mjs`)
   lives in its skill's folder and installs with it, unlike the scripts above; its test sits in
-  `scripts/` so the test does not install.
+  `scripts/` so the test does not install. A skill that runs another skill's helper names it
+  under `metadata: helpers:` (`end-session/board.mjs`), and `npm run build` writes it a copy in
+  its own folder. Edit only the source, `skills/end-session/board.mjs`; the copies are generated,
+  and `npm run check` fails when one drifts or a skill calls another skill's copy.
 - `test-prover` and `ci-triage` run in a forked subagent (`context: fork` in their frontmatter),
   and every forked skill and agent file takes `model: inherit`, never a pinned model (Decision 14
   in `docs/design.md`). A session that launches a subagent passes no model override either: the
